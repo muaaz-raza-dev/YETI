@@ -1,7 +1,8 @@
 #include <curl/curl.h>
 #include <bits/stdc++.h>
 using namespace std;
-
+#include "json.hpp"
+using json = nlohmann::json;
 
 class API{
   CURL* curl;

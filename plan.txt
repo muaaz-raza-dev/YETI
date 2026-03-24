@@ -1,0 +1,8 @@
+------------- YT Video Extraction Plan ------------------
+10,000 tokens in a day
+
+1. fetch the Video ids 50 at once - it cost 100 tokens
+    -add filter to upload date , max should be 14 days. 
+    -search for different category to avoid duplicates
+2. fetch the Video details for these 50 videos at once , cost 1 token
+estimate around 4.5k videos data

@@ -1,0 +1,8 @@
+[
+{
+  "directory": "F:/C&CPP Project/Yeti/frontend",
+  "command": "C:\\mingw64\\bin\\c++.exe -I\"F:/C&CPP Project/Yeti/frontend/include\" -std=gnu++17 -o CMakeFiles\\app.dir\\main.cpp.obj -c \"F:\\C&CPP Project\\Yeti\\frontend\\main.cpp\"",
+  "file": "F:/C&CPP Project/Yeti/frontend/main.cpp",
+  "output": "F:/C&CPP Project/Yeti/frontend/CMakeFiles/app.dir/main.cpp.obj"
+}
+]
