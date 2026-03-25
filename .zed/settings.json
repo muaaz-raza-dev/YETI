@@ -2,14 +2,14 @@
   "project_name": "YETI",
   "lsp": {
     "clangd": {
-        "binary": {
-            "path": "C:/msys64/ucrt64/bin/clangd.exe",
-            "arguments": [
-                "--query-driver=C:/msys64/ucrt64/bin/g++*",
-                "--header-insertion=never",
-                "--compile-commands-dir=build",  
-            ]
-        }
+      "binary": {
+        "path": "C:/msys64/ucrt64/bin/clangd.exe",
+        "arguments": [
+          "--query-driver=C:/msys64/ucrt64/bin/g++*",
+          "--header-insertion=never",
+          "--compile-commands-dir=build"
+        ]
+      }
     }
   }
 }
