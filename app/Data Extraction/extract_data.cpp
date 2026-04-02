@@ -2,19 +2,8 @@
 #include "../utils/api.hpp"
 #include <cstdlib>
 
-// vids.json
-// {
-//     ids : []
-// }
 
-struct vidDetails
-{
-  string id, publishedAt, channelId, title;
-  long long viewCount;
-  long long likeCount;
-  long long subscriberCount;
-  long commentCount;
-};
+
 
 class YTAPI : public API{
   string APIKEY;
