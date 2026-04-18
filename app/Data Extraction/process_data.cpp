@@ -1,5 +1,4 @@
 #include "../headers/libs.hpp"
-
 #include <iomanip>
 
 struct PublishedAtDetails {
@@ -11,22 +10,30 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PublishedAtDetails,  day_of_week, hour)
 
 struct IDataType {
     std::string channelId;
-    float commentCount;
+    double commentCount;
     std::string id;
-    float likeCount;
+    double likeCount;
     std::string publishedAt;
     
     PublishedAtDetails publishedAtDetails; 
     
-    float subscriberCount;
+    double subscriberCount;
     std::string title;
-    float viewCount;
+    double viewCount;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(IDataType, 
     channelId, commentCount, id, likeCount, publishedAt, 
     publishedAtDetails, subscriberCount, title, viewCount
 )
+
+
+struct InumericalDataInsight{
+          double max_lc ,min_lc;double mean_lc,std_lc;
+          double max_vc ,min_vc;double mean_vc,std_vc;
+          double max_sc ,min_sc;double mean_sc,std_sc;
+          double max_cc ,min_cc;double mean_cc,std_cc;
+  };
 
 
 class ProcessData {
@@ -143,12 +150,7 @@ class ProcessData {
   }
 
 
-  struct InumericalDataInsight{
-          double max_lc ,min_lc;double mean_lc,std_lc;
-          double max_vc ,min_vc;double mean_vc,std_vc;
-          double max_sc ,min_sc;double mean_sc,std_sc;
-          double max_cc ,min_cc;double mean_cc,std_cc;
-  };
+  
  
   InumericalDataInsight GetNumericalDataInsights(bool print=true){
           ifstream dataFile("data/glacier1std.json");
@@ -227,10 +229,12 @@ class ProcessData {
     inFile >> data;
 
     for(auto &x:data["data"]){
-        x["subscriberCount"] = (float)(x["subscriberCount"].get<int>()-insights.min_sc)/(insights.max_sc-insights.min_sc);
-        x["viewCount"] = (float)(x["viewCount"].get<int>()-insights.min_vc)/(insights.max_vc-insights.min_vc);
-        x["commentCount"] = (float)(x["commentCount"].get<int>()-insights.min_cc)/(insights.max_cc-insights.min_cc);
-        x["likeCount"] = (float)(x["likeCount"].get<int>()-insights.min_lc)/(insights.max_lc-insights.min_lc);
+        x["subscriberCount"] = (double)(x["subscriberCount"].get<int>()-insights.min_sc)/(insights.max_sc-insights.min_sc);
+        x["commentCount"] = (double)(x["commentCount"].get<int>()-insights.min_cc)/(insights.max_cc-insights.min_cc);
+        x["likeCount"] = (double)(x["likeCount"].get<int>()-insights.min_lc)/(insights.max_lc-insights.min_lc);
+        x["viewCount"] = (double)(x["viewCount"].get<int>()-insights.min_vc)/(insights.max_vc-insights.min_vc);
+        x["publishedAtDetails"]["day_of_week"] = (double)(x["publishedAtDetails"]["day_of_week"].get<int>())/(6);
+        x["publishedAtDetails"]["hour"] = (double)(x["publishedAtDetails"]["hour"].get<int>())/(23);
     }
     outFile << data.dump(4);
     outFile.close();
@@ -259,7 +263,6 @@ class ProcessData {
     inFile >> data;
         for(auto &x:data["data"]){
         x["subscriberCount"] = (float)(x["subscriberCount"].get<int>()-insights.mean_sc)/(insights.std_sc);
-        x["viewCount"] = (float)(x["viewCount"].get<int>()-insights.mean_vc)/(insights.std_vc);
         x["commentCount"] = (float)(x["commentCount"].get<int>()-insights.mean_cc)/(insights.std_cc);
         x["likeCount"] = (float)(x["likeCount"].get<int>()-insights.mean_lc)/(insights.std_lc);
     }
@@ -272,7 +275,7 @@ class ProcessData {
   }
   bool SplitData(){
       json data = {{"count",0},{"data",json::array()}};
-      ifstream DataFile("data/glacier1std.json");
+      ifstream DataFile("data/glacier1mm.json");
       if(!DataFile.is_open()){
         cout << "Can't able to read the data file" << "\n";
         return false;
