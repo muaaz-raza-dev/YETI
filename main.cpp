@@ -3,7 +3,7 @@
 int main() {
 
     ProcessData pd;
-    pd.GetNumericalDataInsights();
+    pd.SplitData();
     
     return 0;
 }

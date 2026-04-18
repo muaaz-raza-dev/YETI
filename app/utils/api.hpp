@@ -1,4 +1,4 @@
-#include "../headers/libs.h"
+#include "../headers/libs.hpp"
 
 class API{
   CURL* curl;

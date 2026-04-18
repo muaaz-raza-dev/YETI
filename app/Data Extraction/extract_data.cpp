@@ -1,4 +1,4 @@
-#include "../headers/libs.h"
+#include "../headers/libs.hpp"
 #include "../utils/api.hpp"
 #include <cstdlib>
 
@@ -87,7 +87,7 @@ class YTAPI : public API{
 public:
   YTAPI()
   {
-    filesystem::current_path("F:/C&CPP Project/Yeti/app/Data Extraction");
+    setFsPointer("/app/Data Extraction");
     const char *apiKeyEnv = std::getenv("YT_API_KEY");
     if (!apiKeyEnv)
       std::cerr << "Error: YT_API_KEY not set in environment!\n";

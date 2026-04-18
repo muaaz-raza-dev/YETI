@@ -1,15 +1,33 @@
-#include "../headers/libs.h"
+#include "../headers/libs.hpp"
+
 #include <iomanip>
-struct Data{
-  string channelId;
-  string id;
-  string publishedAt;
-  string title;
-  long long commentCount;
-  long long likeCount;
-  long long subscriberCount;
-  long long viewCount;
+
+struct PublishedAtDetails {
+    int day_of_week;
+    int hour;
 };
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PublishedAtDetails,  day_of_week, hour)
+
+struct IDataType {
+    std::string channelId;
+    float commentCount;
+    std::string id;
+    float likeCount;
+    std::string publishedAt;
+    
+    PublishedAtDetails publishedAtDetails; 
+    
+    float subscriberCount;
+    std::string title;
+    float viewCount;
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(IDataType, 
+    channelId, commentCount, id, likeCount, publishedAt, 
+    publishedAtDetails, subscriberCount, title, viewCount
+)
+
 
 class ProcessData {
     private :
@@ -22,9 +40,11 @@ class ProcessData {
     }
 
     public :
-    ProcessData(){
-    filesystem::current_path("F:/C&CPP Project/Yeti/app/Data Extraction");
+    ProcessData(){ //Constructor
+      setFsPointer("/app/Data Extraction");
+    
     }
+
     bool removeDuplicates(){
 
       unordered_set<string> ids;
@@ -105,9 +125,7 @@ class ProcessData {
         mktime(&t);
 
         x["publishedAtDetails"] = {};
-        x["publishedAtDetails"]["day"] = t.tm_mday;
         x["publishedAtDetails"]["hour"] = t.tm_hour;
-        x["publishedAtDetails"]["minute"] = t.tm_min;
         x["publishedAtDetails"]["day_of_week"] = t.tm_wday;
       }
 
@@ -123,12 +141,15 @@ class ProcessData {
     cout << "Date data has been assembled";
     return true;
   }
+
+
   struct InumericalDataInsight{
           double max_lc ,min_lc;double mean_lc,std_lc;
           double max_vc ,min_vc;double mean_vc,std_vc;
           double max_sc ,min_sc;double mean_sc,std_sc;
           double max_cc ,min_cc;double mean_cc,std_cc;
   };
+ 
   InumericalDataInsight GetNumericalDataInsights(bool print=true){
           ifstream dataFile("data/glacier1std.json");
           json data;
@@ -219,7 +240,7 @@ class ProcessData {
 
   }
   bool StandardizarionScaling(){
-struct InumericalDataInsight insights = GetNumericalDataInsights(false);
+    struct InumericalDataInsight insights = GetNumericalDataInsights(false);
     ifstream inFile("data/glacier1.json");
     if(!inFile.is_open()){
       cout << "Can't able to read the data file" << "\n";
@@ -248,7 +269,52 @@ struct InumericalDataInsight insights = GetNumericalDataInsights(false);
     inFile.close();
     cout << "Standardization scalling is done" << "\n";
     return true;
-    
+  }
+  bool SplitData(){
+      json data = {{"count",0},{"data",json::array()}};
+      ifstream DataFile("data/glacier1std.json");
+      if(!DataFile.is_open()){
+        cout << "Can't able to read the data file" << "\n";
+        return false;
+      }
+    DataFile >> data;
+    int count = data["count"].get<int>();
+
+    vector<IDataType> ds = data["data"].get<vector<IDataType>>();
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    shuffle(ds.begin(),ds.end(),g);
+
+    int limit= count * 2/10;
+  
+    vector<IDataType> testset(ds.begin(), ds.begin() + limit);
+    vector<IDataType> trainset(ds.begin() + limit, ds.end());
+
+    ofstream TrainSetF("data/glacier1trs.json");
+    ofstream TestSetF("data/glacier1ts.json");
+
+    if(!TrainSetF.is_open()||!TestSetF.is_open()){
+        cout << "Can't able to create the data files" << "\n";
+        return false;
+    }
+
+    json trsj = {{"count",trainset.size()},{"data",trainset}} ;
+    json tsj = {{"count",testset.size()},{"data",testset}} ;
+
+
+    TrainSetF << trsj.dump(4);
+    TestSetF << tsj.dump(4);
+
+    TrainSetF.close();
+    TestSetF.close();
+    DataFile.close();
+
+    cout << "Split has been created successfully" << "\n";
+
+    return true;
+
+
   }
 
 };
