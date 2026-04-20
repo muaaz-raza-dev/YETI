@@ -1,12 +1,11 @@
-// #include "app/Data Extraction/process_data.cpp"
-#include "app/ML Model/lr_model.cpp"
+#include "app/Interface/interface.cpp"
 
 int main() {
-    
-    LinearRegressionModel model;
-    cout << model.evaluateMSE() << "\n";
-    // model.train(0.1,100000);
-    // cout << model.evaluateMSE()  << "\n";
+    UserInterface us;
+    string url;
+    cout << "Enter the url : "  ;
+    cin >> url;
+    cout << us.predict(url) << "\n";
     
     return 0;
 }

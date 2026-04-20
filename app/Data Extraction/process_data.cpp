@@ -1,50 +1,14 @@
 #include "../headers/libs.hpp"
-#include <iomanip>
-
-struct PublishedAtDetails {
-    int day_of_week;
-    int hour;
-};
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PublishedAtDetails,  day_of_week, hour)
-
-struct IDataType {
-    std::string channelId;
-    double commentCount;
-    std::string id;
-    double likeCount;
-    std::string publishedAt;
-    
-    PublishedAtDetails publishedAtDetails; 
-    
-    double subscriberCount;
-    std::string title;
-    double viewCount;
-};
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(IDataType, 
-    channelId, commentCount, id, likeCount, publishedAt, 
-    publishedAtDetails, subscriberCount, title, viewCount
-)
 
 
-struct InumericalDataInsight{
-          double max_lc ,min_lc;double mean_lc,std_lc;
-          double max_vc ,min_vc;double mean_vc,std_vc;
-          double max_sc ,min_sc;double mean_sc,std_sc;
-          double max_cc ,min_cc;double mean_cc,std_cc;
-  };
+
+
 
 
 class ProcessData {
     private :
 
-    tm to_timestamp(const string& s) {
-      std::tm tm = {};
-      std::istringstream ss(s);
-      ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
-      return tm;
-    }
+    
 
     public :
     ProcessData(){ //Constructor
@@ -120,6 +84,7 @@ class ProcessData {
     return true;
   }
   bool processssDate(){
+    
       json data;
       ifstream inFile("data/glacier1.json");
       if(!inFile.is_open()){
@@ -153,7 +118,13 @@ class ProcessData {
   
  
   InumericalDataInsight GetNumericalDataInsights(bool print=true){
+        setFsPointer("/app/Data Extraction",false);
+        struct InumericalDataInsight m;
           ifstream dataFile("data/glacier1std.json");
+          if(!dataFile.is_open()){
+            cout << "Unable to read the data to get numerical Insights" << "\n";
+            return m;
+          }
           json data;
           dataFile >> data;
           double max_lc = 0, min_lc=INT_MAX;
@@ -210,36 +181,62 @@ class ProcessData {
           return nm;
           
   }
-  bool ScaleMinMaxAll(){
+  IDataType& ScaleMinMax(IDataType &dp){
+        struct InumericalDataInsight insights = GetNumericalDataInsights(false);
+        insights.min_sc = min(insights.min_sc,dp.subscriberCount);
+        insights.max_sc = max(insights.max_sc,dp.subscriberCount);
+
+        insights.min_cc = min(insights.min_cc,dp.commentCount);
+        insights.max_cc = max(insights.max_cc,dp.commentCount);
+
+        insights.min_vc = min(insights.min_vc,dp.viewCount);
+        insights.max_vc = max(insights.max_vc,dp.viewCount);
+
+        insights.min_lc = min(insights.min_lc,dp.likeCount);
+        insights.max_lc = max(insights.max_lc,dp.likeCount);
+
+        dp.subscriberCount = (double)(dp.subscriberCount-insights.min_sc)/(insights.max_sc-insights.min_sc);
+        dp.commentCount = (double)(dp.commentCount-insights.min_cc)/(insights.max_cc-insights.min_cc);
+        dp.likeCount = (double)(dp.likeCount-insights.min_lc)/(insights.max_lc-insights.min_lc);
+        dp.viewCount = (double)(dp.viewCount-insights.min_vc)/(insights.max_vc-insights.min_vc);
+        dp.publishedAtDetails.day_of_week = (double)(dp.publishedAtDetails.day_of_week)/(6);
+        dp.publishedAtDetails.hour = (double)(dp.publishedAtDetails.hour)/(23);
+        cout << "Local Min Max Scaling is done ";
+        return dp;
+  }
+
+   bool ScaleMinMaxAll(){
     struct InumericalDataInsight insights = GetNumericalDataInsights(false);
-    ifstream inFile("data/glacier1.json");
-    if(!inFile.is_open()){
-      cout << "Can't able to read the data file" << "\n";
+
+      ifstream inFile("data/glacier1.json");
+      if(!inFile.is_open()){
+      cerr << "Can't able to read the data file" << "\n";
       return false;
 
     }
     
     ofstream outFile("data/glacier1mm.json");
     if(!outFile.is_open()){
-      cout << "Can't able to create the new data file" << "\n";
+      cerr << "Can't able to create the new data file" << "\n";
       return false;
-
+      
     }
     json data;
     inFile >> data;
-
+    
     for(auto &x:data["data"]){
-        x["subscriberCount"] = (double)(x["subscriberCount"].get<int>()-insights.min_sc)/(insights.max_sc-insights.min_sc);
+      x["subscriberCount"] = (double)(x["subscriberCount"].get<int>()-insights.min_sc)/(insights.max_sc-insights.min_sc);
         x["commentCount"] = (double)(x["commentCount"].get<int>()-insights.min_cc)/(insights.max_cc-insights.min_cc);
         x["likeCount"] = (double)(x["likeCount"].get<int>()-insights.min_lc)/(insights.max_lc-insights.min_lc);
         x["viewCount"] = (double)(x["viewCount"].get<int>()-insights.min_vc)/(insights.max_vc-insights.min_vc);
         x["publishedAtDetails"]["day_of_week"] = (double)(x["publishedAtDetails"]["day_of_week"].get<int>())/(6);
         x["publishedAtDetails"]["hour"] = (double)(x["publishedAtDetails"]["hour"].get<int>())/(23);
-    }
-    outFile << data.dump(4);
-    outFile.close();
-    inFile.close();
-    cout << "Min Max scalling is done" << "\n";
+      }
+      outFile << data.dump(4);
+      outFile.close();
+      inFile.close();
+    
+    
     return true;
 
   }

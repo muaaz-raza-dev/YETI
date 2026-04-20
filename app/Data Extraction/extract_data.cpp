@@ -3,8 +3,7 @@
 #include <cstdlib>
 
 
-
-
+  
 class YTAPI : public API{
   string APIKEY;
   string baseurl = "https://www.googleapis.com/youtube/v3/";
@@ -36,12 +35,15 @@ class YTAPI : public API{
   {
     return APIKEY.size() ? true : false;
   }
-  bool saveVideoIds(){
-    json updated_vids_json = {{"ids", json::array()},{"total",0}};
-    for (const auto &id : vids) updated_vids_json["ids"].push_back(id);
-    updated_vids_json["total"] = vids.size(); 
+  bool saveVideoIds()
+  {
+    json updated_vids_json = {{"ids", json::array()}, {"total", 0}};
+    for (const auto &id : vids)
+      updated_vids_json["ids"].push_back(id);
+    updated_vids_json["total"] = vids.size();
     std::ofstream outFile("data/vids.json");
-    if (!outFile.is_open()){
+    if (!outFile.is_open())
+    {
       std::cerr << "Cannot open file for writing!\n";
       outFile.close();
       return false;
@@ -51,37 +53,82 @@ class YTAPI : public API{
 
     return true;
   }
-  string safeToString(json &j) {
-    if (j.is_null()) return "0";
-    if (j.is_string()) return j.get<string>();
+
+  string safeToString(json &j)
+  {
+    if (j.is_null())
+      return "0";
+    if (j.is_string())
+      return j.get<string>();
     return to_string(j.get<long long>());
   }
-  bool fetchChannelDetails(json &response){
+  double safeToDouble(json &j)
+  {
+    if (j.is_null())
+      return 0.0;
+    if (j.is_string())
+      return 0.0;
+    return j.get<double>();
+  }
+
+  bool fetchChannelDetails(json &response)
+  {
     cout << "Fetching Channel Details" << "\n";
-    string channelIds="";
-    for (auto x : response["payload"]["items"]){
-        channelIds.append(x["snippet"]["channelId"].get<string>()+",");
+    string channelIds = "";
+    for (auto x : response["payload"]["items"])
+    {
+      channelIds.append(x["snippet"]["channelId"].get<string>() + ",");
     }
     int n = channelIds.size();
-    if(!n) return false;
-    //replacing last comma with the & to follow the url format
-    if(n) channelIds[n-1] = '&';
-    string url = baseurl+"channels?part=statistics&id="+channelIds+"key="+APIKEY;
+    if (!n)
+      return false;
+    // replacing last comma with the & to follow the url format
+    if (n)
+      channelIds[n - 1] = '&';
+    string url = baseurl + "channels?part=statistics&id=" + channelIds + "key=" + APIKEY;
 
     json responseChannels = get(url);
-    if(responseChannels["payload"].contains("error")) {
+    if (responseChannels["payload"].contains("error"))
+    {
       cout << responseChannels["payload"]["error"]["message"] << "\n";
       return false;
     }
-    if(!responseChannels["status"]) return false; 
+    if (!responseChannels["status"])
+      return false;
     n = response["payload"]["items"].size();
-    for(int i=0;i<=n;i++){
-      if(responseChannels["payload"]["items"][i].contains("statistics")){
-          response["payload"]["items"][i]["subscriberCount"] = responseChannels["payload"]["items"][i]["statistics"]["subscriberCount"];
-        }
+    for (int i = 0; i <= n; i++)
+    {
+      if (responseChannels["payload"]["items"][i].contains("statistics"))
+      {
+        response["payload"]["items"][i]["subscriberCount"] = responseChannels["payload"]["items"][i]["statistics"]["subscriberCount"];
+      }
     }
     cout << "Channel Details attached" << "\n";
     return true;
+  }
+  string decodeIdFromURL(string url)
+  {
+
+    bool found = false;
+    string id;
+    cout << url.size() << "\n";
+
+    for (int i = 0; i < url.size(); i++)
+    {
+      if (found)
+      {
+        if (url[i] == '&')
+          break;
+        id.push_back(url[i]);
+        continue;
+      }
+      if (url[i] == 'v' && url[i + 1] == '=')
+      {
+        found = true;
+        i++;
+      }
+    }
+    return id;
   }
 
 public:
@@ -89,6 +136,7 @@ public:
   {
     setFsPointer("/app/Data Extraction");
     const char *apiKeyEnv = std::getenv("YT_API_KEY");
+
     if (!apiKeyEnv)
       std::cerr << "Error: YT_API_KEY not set in environment!\n";
     else
@@ -98,9 +146,64 @@ public:
     }
   }
   
+
+  IFetchVideoDataResponse FetchVideoData(string url){
+    IFetchVideoDataResponse res{false,"", IDataType()};
+    string id = decodeIdFromURL(url);
+    if (!id.size())
+    {
+      cerr << "invalid youtube url" << "\n";
+      return res;
+    }
+    url = "https://www.googleapis.com/youtube/v3/videos/?part=snippet,statistics,contentDetails&id=" + id + "&key=" + APIKEY;
+
+    json response = get(url);
+    if (!response["status"])
+    {
+      cout << "Failed to fetch the video's details" << "\n";
+      return res;
+    }
+    if (response["payload"].contains("error"))
+    {
+      cout << response["payload"]["error"]["message"] << "\n";
+      return res;
+    }
+
+    if (!fetchChannelDetails(response))return res;
+
+    res.payload.subscriberCount = safeToDouble(response["payload"]["items"][0]["subscriberCount"]);
+    res.payload.commentCount = safeToDouble(response["payload"]["items"][0]["statistics"]["commentCount"]);
+    res.payload.viewCount = safeToDouble(response["payload"]["items"][0]["statistics"]["viewCount"]);
+    res.payload.likeCount = safeToDouble(response["payload"]["items"][0]["statistics"]["likeCount"]);
+
+    if(response["payload"]["items"][0]["snippet"]["publishedAt"].is_null()){
+      res.message = "video data is inaccesable" ;
+      return res;
+    }
+
+    tm t = to_timestamp(response["payload"]["items"][0]["snippet"]["publishedAt"].get<string>());
+    tm today = to_timestamp("",true);
+    mktime(&t);
+    mktime(&today);
+    int diff = abs(t.tm_yday-today.tm_yday);
+    
+    if( diff < 3 || diff > 6 ){
+      res.message = "The video video should be uploaded within the spam of 3-6 days from now!";
+      return res;
+    }
+
+    res.payload.publishedAtDetails = {};
+    res.payload.publishedAtDetails.hour = t.tm_hour;
+    res.payload.publishedAtDetails.day_of_week = t.tm_wday;
+    res.status = true;
+    cout << "successfully fetched the parameters" << "\n";
+    return res;
+  }
+
   bool FetchVideoIds(string q, string past7, string past14, string part_ = "snippet", string order = "viewCount")
   {
-    if (!allSet()){
+    if (!allSet())
+    {
       cerr << "Missing YT init setup" << "\n";
       return false;
     }
@@ -110,7 +213,8 @@ public:
                       "T00:00:00Z" + "&publishedAfter=" + past14 +
                       "T00:00:00Z" + "&maxResults=50&key=" + APIKEY;
     json j = get(endpoint);
-    if(j["payload"].contains("error")) {
+    if (j["payload"].contains("error"))
+    {
       cout << j["payload"]["error"]["message"] << "\n";
       return false;
     }
@@ -124,10 +228,11 @@ public:
         }
       }
       // to save to the file
-      json updated_vids_json = {{"ids", json::array()},{"total",0}};
-      for (auto id : vids) updated_vids_json["ids"].push_back(id);
+      json updated_vids_json = {{"ids", json::array()}, {"total", 0}};
+      for (auto id : vids)
+        updated_vids_json["ids"].push_back(id);
 
-      updated_vids_json["total"] = vids.size(); 
+      updated_vids_json["total"] = vids.size();
       std::ofstream outFile("data/vids.json");
       if (!outFile.is_open())
       {
@@ -145,17 +250,22 @@ public:
       cout << "failed to fetch any";
     return false;
   }
-  bool FetchBulkVideoDetails(){
-    int i =0;
-    while(vids.size()) {
+  bool FetchBulkVideoDetails()
+  {
+    int i = 0;
+    while (vids.size())
+    {
       cout << "Fetching " << i++ << "th" << " Batch." << "\n";
-      if(!FetchVideoDetails()) return false;
+      if (!FetchVideoDetails())
+        return false;
     }
     return true;
   }
 
-  bool FetchVideoDetails(string part_ = "snippet,statistics,contentDetails"){
-    if (!allSet()){
+  bool FetchVideoDetails(string part_ = "snippet,statistics,contentDetails")
+  {
+    if (!allSet())
+    {
       cerr << "Missing YT init setup" << "\n";
       return false;
     }
@@ -163,7 +273,8 @@ public:
 
     int i = 0;
     string vididlist = "";
-    if (!vids.size()){
+    if (!vids.size())
+    {
       cout << "There is no vids to fetch details";
       return false;
     }
@@ -180,100 +291,110 @@ public:
     string url = "https://www.googleapis.com/youtube/v3/videos/?part=" + part_ + "&id=" + vididlist + "&key=" + APIKEY;
 
     json response = get(url);
-    if(!response["status"]) {
+    if (!response["status"])
+    {
       cout << "Failed to fetch the video's details" << "\n";
       return false;
     }
-    if(response["payload"].contains("error")) {
+    if (response["payload"].contains("error"))
+    {
       cout << response["payload"]["error"]["message"] << "\n";
       return false;
     }
-    json data ;
-    if(!fetchChannelDetails(response)) return false;
+    json data;
+    if (!fetchChannelDetails(response))
+      return false;
 
-      ifstream inFile("data/glacier1.json");
+    ifstream inFile("data/glacier1.json");
 
-      if (inFile.is_open()){
-        if (inFile.peek() == ifstream::traits_type::eof()){
-          data = {
-        {"data", json::array()},
-        {"count", 0}
-      };
-        }
-        else inFile >> data;
-        inFile.close();
+    if (inFile.is_open())
+    {
+      if (inFile.peek() == ifstream::traits_type::eof())
+      {
+        data = {
+            {"data", json::array()},
+            {"count", 0}};
       }
-      else{
-         data = {
-        {"data", json::array()},
-        {"count", 0}
-      };
-      }
-      if (!data["data"].is_array()) data["data"] = json::array();
-      if (!data["count"].is_number()) data["count"] = 0;
+      else
+        inFile >> data;
+      inFile.close();
+    }
+    else
+    {
+      data = {
+          {"data", json::array()},
+          {"count", 0}};
+    }
+    if (!data["data"].is_array())
+      data["data"] = json::array();
+    if (!data["count"].is_number())
+      data["count"] = 0;
 
-      for (auto x : response["payload"]["items"]){
-        json v = {
-            {"id", safeToString(x["id"])},
-            {"publishedAt", safeToString(x["snippet"]["publishedAt"])},
-            {"channelId", safeToString(x["snippet"]["channelId"])},
-            {"title", safeToString(x["snippet"]["title"])},
-            {"viewCount", safeToString(x["statistics"]["viewCount"])},
-            {"likeCount", safeToString(x["statistics"]["likeCount"])},
-            {"subscriberCount", x["subscriberCount"]},
-            {"commentCount", safeToString(x["statistics"]["commentCount"])}
-          };
+    for (auto x : response["payload"]["items"])
+    {
+      json v = {
+          {"id", safeToString(x["id"])},
+          {"publishedAt", safeToString(x["snippet"]["publishedAt"])},
+          {"channelId", safeToString(x["snippet"]["channelId"])},
+          {"title", safeToString(x["snippet"]["title"])},
+          {"viewCount", safeToString(x["statistics"]["viewCount"])},
+          {"likeCount", safeToString(x["statistics"]["likeCount"])},
+          {"subscriberCount", x["subscriberCount"]},
+          {"commentCount", safeToString(x["statistics"]["commentCount"])}};
 
-        data["data"].push_back(v);
-      }
-      int num = (int)data["count"] + (int)response["payload"]["items"].size();
-      data["count"] = num;
-      if (!saveVideoIds()){
-        cout << "\033[31mfailed to delete the trash video ids\033[0m\n";
-        vids = copy;
-        return false;
-      };
+      data["data"].push_back(v);
+    }
+    int num = (int)data["count"] + (int)response["payload"]["items"].size();
+    data["count"] = num;
+    if (!saveVideoIds())
+    {
+      cout << "\033[31mfailed to delete the trash video ids\033[0m\n";
+      vids = copy;
+      return false;
+    };
     std::ofstream outFile("data/glacier1.json");
     outFile << data.dump(4);
     outFile.close();
 
-    
-
     cout << "\033[32mVideos's data is fetched\033[0m\n";
-    return true; 
+    return true;
   }
-  
-  
-
 };
 
-
-void FetchDataCLI(){
-    YTAPI api;
-    cout << "Search videos [1] \nFetch all videos data [2]" << "\n";
-    int option ;
-    cout << "Your choice : ";
-    cin >> option;
+void FetchDataCLI()
+{
+  YTAPI api;
+  cout << "Search videos [1] \nFetch all videos data [2]" << "\n";
+  int option;
+  cout << "Your choice : ";
+  cin >> option;
+  cin.ignore(numeric_limits<streamsize>::max(), '\n');
+  if (option == 1)
+  {
+    cout << "How many searches : ";
+    int n;
+    cin >> n;
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    if(option == 1){
-        cout << "How many searches : " ;
-        int n;
-        cin >> n;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        string temp ;
-        for(int i=1;i<=n;i++){
-            getline(cin ,temp);
-            string result ="";
-            for (char c : temp) {
-                if (c == ' ') result += "%20";
-                else result += c;
-            }
-            cout << i << " Fetching " << result << "\n";
-            if(!api.FetchVideoIds(result,"2026-03-21","2026-03-14")) break;
-        }
-        cout << "Completed" << "\n";
+    string temp;
+    for (int i = 1; i <= n; i++)
+    {
+      getline(cin, temp);
+      string result = "";
+      for (char c : temp)
+      {
+        if (c == ' ')
+          result += "%20";
+        else
+          result += c;
+      }
+      cout << i << " Fetching " << result << "\n";
+      if (!api.FetchVideoIds(result, "2026-03-21", "2026-03-14"))
+        break;
     }
-    else {
-        api.FetchBulkVideoDetails();
-    }
+    cout << "Completed" << "\n";
+  }
+  else
+  {
+    api.FetchBulkVideoDetails();
+  }
 }

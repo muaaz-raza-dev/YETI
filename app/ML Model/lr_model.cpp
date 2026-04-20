@@ -1,4 +1,5 @@
 #include "../headers/libs.hpp"
+
 #include "../Data Extraction/process_data.cpp"
 
 // struct IDataType {
@@ -105,21 +106,12 @@ class LinearRegressionModel{
     }
 
 
-    long long predict(int commentCount, int likeCount, int subscriberCount, int day_of_week, int hour) {
-    
-    InumericalDataInsight d = pd.GetNumericalDataInsights();
+    long long predict(double commentCount, double likeCount, double subscriberCount, double day_of_week, double hour) {
+        InumericalDataInsight d = pd.GetNumericalDataInsights(false);
 
-    double commentCount_ = (commentCount - min(d.min_cc, (double)commentCount)) / (max(d.max_cc, (double)commentCount) - min(d.min_cc, (double)commentCount));
-    
-    double likeCount_ = (likeCount - min(d.min_lc, (double)likeCount)) / (max(d.max_lc, (double)likeCount) - min(d.min_lc, (double)likeCount));
-    
-    double subscriberCount_ = (subscriberCount - min(d.min_sc, (double)subscriberCount)) / (max(d.max_sc, (double)subscriberCount) - min(d.min_sc, (double)subscriberCount));
-    
-    double day_of_week_ = day_of_week / 6.0;
-    double hour_ = hour / 23.0;
 
-    return (fx(commentCount_, likeCount_, subscriberCount_, day_of_week_, hour_) * (d.max_vc - d.min_vc)) + d.min_vc;
+        return (fx(commentCount, likeCount, subscriberCount, day_of_week, hour) * (d.max_vc - d.min_vc)) + d.min_vc;
 
-}
+    }
 
 };
