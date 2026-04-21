@@ -18,4 +18,7 @@ class UserInterface{
         IDataType &d = params.payload;
         return ml.predict(d.commentCount,d.likeCount,d.subscriberCount,d.publishedAtDetails.day_of_week,d.publishedAtDetails.hour);
     }
+    void SearchVideos(){ 
+        yt.FetchDataCLI();
+    }
 };

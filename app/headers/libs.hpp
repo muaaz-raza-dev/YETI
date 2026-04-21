@@ -11,7 +11,9 @@
 #include <curl/curl.h>
 #include <bits/stdc++.h>
 #include <iomanip>
+#include <chrono>
 using namespace std;
+using namespace chrono;
 #include "../../json.hpp"
 using json = nlohmann::json;
 
@@ -44,6 +46,8 @@ struct IDataType {
     double subscriberCount;
     std::string title;
     double viewCount;
+    double averageViewsPerVideo;
+    bool TargetCollected;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(IDataType, 
