@@ -3,7 +3,7 @@
 int main() {
 
     UserInterface us;
-    us.SearchVideos();
+    us.CleanData();
     // string url;
     // cout << "Enter the url : "  ;
     // cin >> url;

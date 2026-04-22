@@ -21,4 +21,9 @@ class UserInterface{
     void SearchVideos(){ 
         yt.FetchDataCLI();
     }
+    void CleanData(){ 
+            pd.removeDuplicates();
+            pd.FixType();
+            pd.processssDate();
+    }
 };

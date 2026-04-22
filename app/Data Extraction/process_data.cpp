@@ -12,7 +12,7 @@ class ProcessData {
 
     public :
     ProcessData(){ //Constructor
-      setFsPointer("/app/Data Extraction");
+      setFsPointer("/app/Data Extraction/");
     
     }
 
@@ -20,7 +20,8 @@ class ProcessData {
 
       unordered_set<string> ids;
       json raw_data;
-      ifstream inFile("data/glacier1.json");
+      setFsPointer("/app/Data Extraction/data",false);
+      ifstream inFile("glacier2.json");
       if(!inFile.is_open()){
         cout << "Can't able to read the data";
         return false;
@@ -30,7 +31,7 @@ class ProcessData {
       
       for(auto x:raw_data["data"]){
           if(ids.count(x["id"])) continue;
-          if(x["subscriberCount"].is_null()) continue;
+          if(x["subscriberCount"].is_null() ) continue;
           ids.insert(x["id"]);
           json v = {
             {"id", x["id"]},
@@ -46,7 +47,7 @@ class ProcessData {
       }
       processed_data["count"] = processed_data["data"].size();
 
-      ofstream outFile("data/glacier2.json");
+      ofstream outFile("glacier2.json");
       if(!inFile.is_open()){
         cout << "Can't able to create the new file";
         return false;
@@ -60,7 +61,8 @@ class ProcessData {
     }
     bool FixType(){
       json data;
-      ifstream inFile("data/glacier1.json");
+      setFsPointer("/app/Data Extraction/data",false);
+      ifstream inFile("glacier2.json");
       if(!inFile.is_open()){
         cout << "Can't able to read the data";
         return false;
@@ -72,7 +74,7 @@ class ProcessData {
           x["subscriberCount"] = stoll(x["subscriberCount"].get<string>());
           x["viewCount"] = stoll(x["viewCount"].get<string>());
       }
-    ofstream outFile("data/glacier2.json");
+    ofstream outFile("glacier2.json");
     if(!outFile.is_open()){
         cout << "Can't able to create the temp file";
         return false;
@@ -86,7 +88,8 @@ class ProcessData {
   bool processssDate(){
     
       json data;
-      ifstream inFile("data/glacier1.json");
+      setFsPointer("/app/Data Extraction/data",false);
+      ifstream inFile("glacier2.json");
       if(!inFile.is_open()){
         cout << "Can't able to read the data";
         return false;
@@ -101,7 +104,7 @@ class ProcessData {
         x["publishedAtDetails"]["day_of_week"] = t.tm_wday;
       }
 
-    ofstream outFile("data/glacier2.json");
+    ofstream outFile("glacier2.json");
     if(!outFile.is_open()){
         cout << "Can't able to create the temp file";
         return false;
