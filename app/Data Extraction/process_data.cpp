@@ -41,7 +41,8 @@ class ProcessData {
             {"viewCount", x["viewCount"]},
             {"likeCount", x["likeCount"]},
             {"subscriberCount", x["subscriberCount"]},
-            {"commentCount", x["commentCount"]}
+            {"commentCount", x["commentCount"]},
+            {"averageViewsPerVideo", x["averageViewsPerVideo"]}
           };
           processed_data["data"].push_back(v);
       }
