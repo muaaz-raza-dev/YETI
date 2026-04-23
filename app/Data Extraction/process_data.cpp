@@ -11,17 +11,17 @@ class ProcessData {
     
 
     public :
-    ProcessData(){ //Constructor
-      setFsPointer("/app/Data Extraction/");
+    ProcessData(){ 
+      setFsPointer("/app/Data Extraction/",false);
     
     }
 
-    bool removeDuplicates(){
+    bool removeDuplicates(string fileName="glacier1.json"){
 
       unordered_set<string> ids;
       json raw_data;
       setFsPointer("/app/Data Extraction/data",false);
-      ifstream inFile("glacier2.json");
+      ifstream inFile(fileName);
       if(!inFile.is_open()){
         cout << "Can't able to read the data";
         return false;
@@ -42,13 +42,14 @@ class ProcessData {
             {"likeCount", x["likeCount"]},
             {"subscriberCount", x["subscriberCount"]},
             {"commentCount", x["commentCount"]},
-            {"averageViewsPerVideo", x["averageViewsPerVideo"]}
+            {"averageViewsPerVideo", x["averageViewsPerVideo"]},
+            {"TargetCollected",x["TargetCollected"] }
           };
           processed_data["data"].push_back(v);
       }
       processed_data["count"] = processed_data["data"].size();
 
-      ofstream outFile("glacier2.json");
+      ofstream outFile(fileName);
       if(!inFile.is_open()){
         cout << "Can't able to create the new file";
         return false;
@@ -60,22 +61,22 @@ class ProcessData {
       cout << "only unique data is saved";
       return true;
     }
-    bool FixType(){
+    bool FixType(string fileName="glacier1.json"){
       json data;
       setFsPointer("/app/Data Extraction/data",false);
-      ifstream inFile("glacier2.json");
+      ifstream inFile(fileName);
       if(!inFile.is_open()){
         cout << "Can't able to read the data";
         return false;
       }
       inFile >> data;
       for(auto &x:data["data"]){
-          x["commentCount"] = stoll(x["commentCount"].get<string>());
-          x["likeCount"] = stoll(x["likeCount"].get<string>());
-          x["subscriberCount"] = stoll(x["subscriberCount"].get<string>());
-          x["viewCount"] = stoll(x["viewCount"].get<string>());
+          x["commentCount"] = x["commentCount"].is_number() ? x["commentCount"].get<double>() : stoll(x["commentCount"].get<string>());
+          x["likeCount"] = x["likeCount"].is_number() ? x["likeCount"].get<double>() : stoll(x["likeCount"].get<string>());
+          x["subscriberCount"] = x["subscriberCount"].is_number() ? x["subscriberCount"].get<double>() : stoll(x["subscriberCount"].get<string>());
+          x["viewCount"] = x["viewCount"].is_number() ? x["viewCount"].get<double>() : stoll(x["viewCount"].get<string>());
       }
-    ofstream outFile("glacier2.json");
+    ofstream outFile(fileName);
     if(!outFile.is_open()){
         cout << "Can't able to create the temp file";
         return false;
@@ -86,11 +87,11 @@ class ProcessData {
     cout << "Type has been fixed";
     return true;
   }
-  bool processssDate(){
+  bool processssDate(string fileName="glacier1.json"){
     
       json data;
       setFsPointer("/app/Data Extraction/data",false);
-      ifstream inFile("glacier2.json");
+      ifstream inFile(fileName);
       if(!inFile.is_open()){
         cout << "Can't able to read the data";
         return false;
@@ -105,7 +106,7 @@ class ProcessData {
         x["publishedAtDetails"]["day_of_week"] = t.tm_wday;
       }
 
-    ofstream outFile("glacier2.json");
+    ofstream outFile(fileName);
     if(!outFile.is_open()){
         cout << "Can't able to create the temp file";
         return false;
@@ -121,10 +122,10 @@ class ProcessData {
 
   
  
-  InumericalDataInsight GetNumericalDataInsights(bool print=true){
-        setFsPointer("/app/Data Extraction",false);
+  InumericalDataInsight GetNumericalDataInsights(bool print=true,string fileName="glacier1std.json"){
+        setFsPointer("/app/Data Extraction/data",false);
         struct InumericalDataInsight m;
-          ifstream dataFile("data/glacier1std.json");
+          ifstream dataFile(fileName);
           if(!dataFile.is_open()){
             cout << "Unable to read the data to get numerical Insights" << "\n";
             return m;
@@ -135,12 +136,17 @@ class ProcessData {
           double max_vc = 0, min_vc=INT_MAX;
           double max_sc = 0, min_sc=INT_MAX;
           double max_cc = 0, min_cc=INT_MAX;
-          long long slc = 0 , svc = 0 , scc=0 ,ssc=0;
+          double max_vv = 0, min_vv=INT_MAX;
+          long long slc = 0 , svc = 0 , scc=0 ,ssc=0 , svv=0;
 
           for(auto x:data["data"]){
             if(max_lc < x["likeCount"].get<int>())  max_lc = x["likeCount"];
             if(min_lc > x["likeCount"].get<int>()) min_lc = x["likeCount"];
             slc+= x["likeCount"].get<int>();
+
+            if(max_lc < x["averageViewsPerVideo"].get<double>())  max_lc = x["averageViewsPerVideo"];
+            if(min_lc > x["averageViewsPerVideo"].get<double>()) min_lc = x["averageViewsPerVideo"];
+            svv+= x["averageViewsPerVideo"].get<double>();
 
             if(max_sc < x["subscriberCount"].get<int>())  max_sc = x["subscriberCount"];
             if(min_sc > x["subscriberCount"].get<int>()) min_sc = x["subscriberCount"];
@@ -155,8 +161,8 @@ class ProcessData {
             svc += x["viewCount"].get<int>();
           }
           int n = data["count"].get<int>();
-          double mean_lc = slc/n , mean_sc = ssc/n , mean_vc = svc/n , mean_cc = scc/n;
-          double std_lc = 0.0,std_sc=0,std_vc =0,std_cc=0;
+          double mean_lc = slc/n , mean_sc = ssc/n , mean_vc = svc/n , mean_cc = scc/n , mean_vv = svv/n;
+          double std_lc = 0.0,std_sc=0,std_vc =0,std_cc=0,std_vv=0;
 
           for(auto x:data["data"]){
                 double s1= mean_lc-x["likeCount"].get<int>();
@@ -170,17 +176,22 @@ class ProcessData {
 
                 s1= mean_sc-x["subscriberCount"].get<int>();
                 std_sc += s1*s1;
+
+                s1= mean_vv-x["averageViewsPerVideo"].get<double>();
+                std_vv += s1*s1;
           }
 
-          std_lc = sqrt(std_lc/n) ;std_sc=sqrt(std_sc/n);std_vc =sqrt(std_vc/n);std_cc=sqrt(std_cc/n);
+          std_lc = sqrt(std_lc/n) ;std_sc=sqrt(std_sc/n);std_vc =sqrt(std_vc/n);std_cc=sqrt(std_cc/n), std_vv = sqrt(std_vv/n);
 
           if(print){
+            cout << "Total :" << data["count"].get<int>() << "\n";
             cout << "Like Count \nmax : " << max_lc << " min : " << min_lc  << " mean : " << mean_lc << " STD : " <<std_lc << "\n";
             cout << "Subscriber Count \nmax : " << max_sc << " min : " << min_sc << " mean : " << mean_sc << " STD : " <<std_sc<< "\n";
             cout << "Comment Count \nmax : " << max_cc << " min : " << min_cc << " mean : " << mean_cc << " STD : " <<std_cc << "\n";
             cout << "View Count \nmax : " << max_vc << " min : " << min_vc << " mean : " << mean_vc << " STD : " <<std_vc << "\n";
+            cout << "Average Views Per Video (Channel) \nmax : " << max_vv << " min : " << min_vv << " mean : " << mean_vv << " STD : " <<std_vv << "\n";
           }
-          struct InumericalDataInsight nm({max_lc ,min_lc,mean_lc,std_lc ,max_vc ,min_vc,mean_vc,std_vc,max_sc ,min_sc,mean_sc,std_sc,max_cc ,min_cc,mean_cc,std_cc});
+          struct InumericalDataInsight nm({max_lc ,min_lc,mean_lc,std_lc ,max_vc ,min_vc,mean_vc,std_vc,max_sc ,min_sc,mean_sc,std_sc,max_cc ,min_cc,mean_cc,std_cc,max_vv,min_vv,mean_vv,std_vv});
           dataFile.close();
           return nm;
           
@@ -199,27 +210,31 @@ class ProcessData {
         insights.min_lc = min(insights.min_lc,dp.likeCount);
         insights.max_lc = max(insights.max_lc,dp.likeCount);
 
+        insights.min_vv = min(insights.min_vv,dp.averageViewsPerVideo);
+        insights.max_vv = max(insights.max_vv,dp.averageViewsPerVideo);
+
         dp.subscriberCount = (double)(dp.subscriberCount-insights.min_sc)/(insights.max_sc-insights.min_sc);
         dp.commentCount = (double)(dp.commentCount-insights.min_cc)/(insights.max_cc-insights.min_cc);
         dp.likeCount = (double)(dp.likeCount-insights.min_lc)/(insights.max_lc-insights.min_lc);
         dp.viewCount = (double)(dp.viewCount-insights.min_vc)/(insights.max_vc-insights.min_vc);
+        dp.averageViewsPerVideo = (double)(dp.averageViewsPerVideo-insights.min_vv)/(insights.max_vv-insights.min_vv);
         dp.publishedAtDetails.day_of_week = (double)(dp.publishedAtDetails.day_of_week)/(6);
         dp.publishedAtDetails.hour = (double)(dp.publishedAtDetails.hour)/(23);
         cout << "Local Min Max Scaling is done ";
         return dp;
   }
 
-   bool ScaleMinMaxAll(){
+   bool ScaleMinMaxAll(string dataFileName="glacier1.json",string outputFileName="glacier1mm.json"){
     struct InumericalDataInsight insights = GetNumericalDataInsights(false);
-
-      ifstream inFile("data/glacier1.json");
+      setFsPointer("/app/Data Extraction/data",false);
+      ifstream inFile(dataFileName);
       if(!inFile.is_open()){
       cerr << "Can't able to read the data file" << "\n";
       return false;
 
     }
     
-    ofstream outFile("data/glacier1mm.json");
+    ofstream outFile(outputFileName);
     if(!outFile.is_open()){
       cerr << "Can't able to create the new data file" << "\n";
       return false;
@@ -233,6 +248,7 @@ class ProcessData {
         x["commentCount"] = (double)(x["commentCount"].get<int>()-insights.min_cc)/(insights.max_cc-insights.min_cc);
         x["likeCount"] = (double)(x["likeCount"].get<int>()-insights.min_lc)/(insights.max_lc-insights.min_lc);
         x["viewCount"] = (double)(x["viewCount"].get<int>()-insights.min_vc)/(insights.max_vc-insights.min_vc);
+        x["averageViewsPerVideo"] = (double)(x["averageViewsPerVideo"].get<double>()-insights.min_vv)/(insights.max_vv-insights.min_vv);
         x["publishedAtDetails"]["day_of_week"] = (double)(x["publishedAtDetails"]["day_of_week"].get<int>())/(6);
         x["publishedAtDetails"]["hour"] = (double)(x["publishedAtDetails"]["hour"].get<int>())/(23);
       }
@@ -244,16 +260,20 @@ class ProcessData {
     return true;
 
   }
-  bool StandardizarionScaling(){
+  bool StandardizarionScaling(string dataFileName="glacier1.json",string outputFileName="glacier1std.json"){
     struct InumericalDataInsight insights = GetNumericalDataInsights(false);
-    ifstream inFile("data/glacier1.json");
+    
+    setFsPointer("/app/Data Extraction/data",false);
+
+    ifstream inFile(dataFileName);
+
     if(!inFile.is_open()){
       cout << "Can't able to read the data file" << "\n";
       return false;
 
     }
     
-    ofstream outFile("data/glacier1std.json");
+    ofstream outFile(outputFileName);
     if(!outFile.is_open()){
       cout << "Can't able to create the new data file" << "\n";
       return false;
@@ -263,9 +283,11 @@ class ProcessData {
 
     inFile >> data;
         for(auto &x:data["data"]){
-        x["subscriberCount"] = (float)(x["subscriberCount"].get<int>()-insights.mean_sc)/(insights.std_sc);
-        x["commentCount"] = (float)(x["commentCount"].get<int>()-insights.mean_cc)/(insights.std_cc);
-        x["likeCount"] = (float)(x["likeCount"].get<int>()-insights.mean_lc)/(insights.std_lc);
+        x["subscriberCount"] = (double)(x["subscriberCount"].get<int>()-insights.mean_sc)/(insights.std_sc);
+        x["viewCount"] = (double)(x["viewCount"].get<int>()-insights.mean_vc)/(insights.std_vc);
+        x["averageViewsPerVideo"] = (double)(x["averageViewsPerVideo"].get<double>()-insights.mean_vv)/(insights.std_vv);
+        x["commentCount"] = (double)(x["commentCount"].get<int>()-insights.mean_cc)/(insights.std_cc);
+        x["likeCount"] = (double)(x["likeCount"].get<int>()-insights.mean_lc)/(insights.std_lc);
     }
 
     outFile << data.dump(4);
@@ -274,9 +296,12 @@ class ProcessData {
     cout << "Standardization scalling is done" << "\n";
     return true;
   }
-  bool SplitData(){
+  bool SplitData(string dataFileName="glacier1mm.json",string trsetFileName="glacier1trs.json",string tsetFileName="glacier1ts.json"){
       json data = {{"count",0},{"data",json::array()}};
-      ifstream DataFile("data/glacier1mm.json");
+
+      setFsPointer("/app/Data Extraction/data",false);
+
+      ifstream DataFile(dataFileName);
       if(!DataFile.is_open()){
         cout << "Can't able to read the data file" << "\n";
         return false;
@@ -295,8 +320,8 @@ class ProcessData {
     vector<IDataType> testset(ds.begin(), ds.begin() + limit);
     vector<IDataType> trainset(ds.begin() + limit, ds.end());
 
-    ofstream TrainSetF("data/glacier1trs.json");
-    ofstream TestSetF("data/glacier1ts.json");
+    ofstream TrainSetF(trsetFileName);
+    ofstream TestSetF(tsetFileName);
 
     if(!TrainSetF.is_open()||!TestSetF.is_open()){
         cout << "Can't able to create the data files" << "\n";

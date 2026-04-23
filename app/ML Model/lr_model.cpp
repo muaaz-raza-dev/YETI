@@ -11,8 +11,7 @@
 // };
 
 class LinearRegressionModel{
-    int nums_parameters = 5; // based on data;
-    vector<double> weights={0,0,0,0,0,0}; 
+    vector<double> weights={0,0,0,0,0,0,0}; 
     ProcessData pd;
     vector<IDataType> ds;
     public : 
@@ -28,7 +27,7 @@ class LinearRegressionModel{
         }
         
         
-        setFsPointer("/app/Data Extraction/data/");
+        setFsPointer("/app/Data Extraction/data/",false);
         ifstream DataFile("glacier1ts.json");
 
         if(!DataFile.is_open()) {
@@ -39,7 +38,6 @@ class LinearRegressionModel{
         DataFile >>  data;
         for(auto x:data["data"]) ds.push_back(x.get<IDataType>());
         DataFile.close();
-        cout << "Data has been loaded" << "\n";
     }
 
     
@@ -47,7 +45,7 @@ class LinearRegressionModel{
         double ans = 0;
 
         for(auto x:ds){
-            double y0 = fx(x.commentCount,x.likeCount,x.subscriberCount,x.publishedAtDetails.day_of_week,x.publishedAtDetails.hour);
+            double y0 = fx(x.commentCount,x.likeCount,x.subscriberCount,x.publishedAtDetails.day_of_week,x.publishedAtDetails.hour,x.averageViewsPerVideo);
             double y = x.viewCount;
             double temp = y-y0;
             ans += temp * temp;
@@ -55,20 +53,19 @@ class LinearRegressionModel{
         return ans / ds.size();
     }
     
-    double fx(double x1,double x2,double x3,double x4,double x5){
-        return weights[0]*x1+weights[1] *x2+weights[2]*x3+weights[3]*x4+weights[4]*x5+weights[5];
+    double fx(double x1,double x2,double x3,double x4,double x5,double x6){
+        return weights[0]*x1+weights[1] *x2+weights[2]*x3+weights[3]*x4+weights[4]*x5+weights[5]*x6 + weights[6];
     }
 
-    void train(float eta=0.01,int ephocs=1){
-        int g = 0;
+    void train(float eta=0.01,int ephocs=100000000){
         int n = ds.size();
-
+        double last_mse = evaluateMSE();
         for (int i = 0; i < ephocs; i++){
 
             double g0 =0 , g1=0,g2 =0,g3 =0, g4=0,g5=0;          
 
             for(auto &x:ds){
-                double y0 = fx(x.commentCount,x.likeCount,x.subscriberCount,x.publishedAtDetails.day_of_week,x.publishedAtDetails.hour);
+                double y0 = fx(x.commentCount,x.likeCount,x.subscriberCount,x.publishedAtDetails.day_of_week,x.publishedAtDetails.hour,x.averageViewsPerVideo);
 
                 double y = x.viewCount;
 
@@ -89,7 +86,7 @@ class LinearRegressionModel{
           weights[3] -= g3* (2.0 / n) * eta;  
           weights[4] -= g4* (2.0 / n) * eta;  
           weights[5] -= g5* (2.0 / n) * eta;  
-          
+          if(abs(last_mse - evaluateMSE()) <= 1e-3) break;
         }
         
         json model_att = {{"weights",json::array()}};
@@ -106,11 +103,11 @@ class LinearRegressionModel{
     }
 
 
-    long long predict(double commentCount, double likeCount, double subscriberCount, double day_of_week, double hour) {
+    long long predict(double commentCount, double likeCount, double subscriberCount, double day_of_week, double hour,double averageViewsPerVideo) {
         InumericalDataInsight d = pd.GetNumericalDataInsights(false);
 
 
-        return (fx(commentCount, likeCount, subscriberCount, day_of_week, hour) * (d.max_vc - d.min_vc)) + d.min_vc;
+        return (fx(commentCount, likeCount, subscriberCount, day_of_week, hour,averageViewsPerVideo) * (d.max_vc - d.min_vc)) + d.min_vc;
 
     }
 

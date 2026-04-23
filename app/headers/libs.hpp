@@ -61,6 +61,7 @@ struct InumericalDataInsight{
           double max_vc ,min_vc;double mean_vc,std_vc;
           double max_sc ,min_sc;double mean_sc,std_sc;
           double max_cc ,min_cc;double mean_cc,std_cc;
+          double max_vv ,min_vv;double mean_vv,std_vv;
 };
 
 

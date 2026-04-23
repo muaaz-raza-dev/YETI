@@ -3,11 +3,8 @@
 int main() {
 
     UserInterface us;
-    us.CleanData();
-    // string url;
-    // cout << "Enter the url : "  ;
-    // cin >> url;
-    // cout << us.predict(url) << "\n";
+    us.Interface();
+    
     
     return 0;
 }

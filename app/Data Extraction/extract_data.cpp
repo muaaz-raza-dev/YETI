@@ -135,7 +135,7 @@ class YTAPI : public API
 public:
   YTAPI()
   {
-    setFsPointer("/app/Data Extraction");
+    setFsPointer("/app/Data Extraction",false);
     const char *apiKeyEnv = std::getenv("YT_API_KEY");
 
     if (!apiKeyEnv)
