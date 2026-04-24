@@ -1,0 +1,3 @@
+/home/muaaz-raza/Projects/YETI/build/CMakeFiles/app.dir
+/home/muaaz-raza/Projects/YETI/build/CMakeFiles/edit_cache.dir
+/home/muaaz-raza/Projects/YETI/build/CMakeFiles/rebuild_cache.dir

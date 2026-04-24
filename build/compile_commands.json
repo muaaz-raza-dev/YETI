@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/muaaz-raza/Projects/YETI/build",
+  "command": "/usr/bin/g++ -DPROJECT_ROOT=\\\"/home/muaaz-raza/Projects/YETI\\\" -g -std=gnu++17 -o CMakeFiles/app.dir/main.cpp.o -c /home/muaaz-raza/Projects/YETI/main.cpp",
+  "file": "/home/muaaz-raza/Projects/YETI/main.cpp",
+  "output": "CMakeFiles/app.dir/main.cpp.o"
+}
+]
