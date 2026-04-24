@@ -23,7 +23,7 @@ class ProcessData {
       setFsPointer("/app/Data Extraction/data",false);
       ifstream inFile(fileName);
       if(!inFile.is_open()){
-        cout << "Can't able to read the data";
+        cerr << RED <<  "Error : Can't able to read the data" << RESET << "\n";
         return false;
       }
       inFile >> raw_data;
@@ -51,14 +51,14 @@ class ProcessData {
 
       ofstream outFile(fileName);
       if(!inFile.is_open()){
-        cout << "Can't able to create the new file";
+        cerr << RED <<  "Error : Can't able to create the file" << RESET << "\n";
         return false;
       }
 
       outFile << processed_data.dump(4);
       outFile.close();
       inFile.close();
-      cout << "only unique data is saved";
+      cout << GREEN<< "Duplicates has been deleted" <<RESET << "\n";
       return true;
     }
     bool FixType(string fileName="glacier1.json"){
@@ -66,7 +66,7 @@ class ProcessData {
       setFsPointer("/app/Data Extraction/data",false);
       ifstream inFile(fileName);
       if(!inFile.is_open()){
-        cout << "Can't able to read the data";
+        cerr << RED <<  "Error : Can't able to read the data" << RESET << "\n";
         return false;
       }
       inFile >> data;
@@ -78,13 +78,13 @@ class ProcessData {
       }
     ofstream outFile(fileName);
     if(!outFile.is_open()){
-        cout << "Can't able to create the temp file";
+        cerr << RED <<  "Error : Can't able to create the temporary file" << RESET << "\n";
         return false;
     }
     outFile << data.dump(4);
     outFile.close();
     inFile.close();
-    cout << "Type has been fixed";
+    cout <<GREEN << "Expected numerical data types has been fixed " << RESET << "\n";
     return true;
   }
   bool processssDate(string fileName="glacier1.json"){
@@ -93,7 +93,7 @@ class ProcessData {
       setFsPointer("/app/Data Extraction/data",false);
       ifstream inFile(fileName);
       if(!inFile.is_open()){
-        cout << "Can't able to read the data";
+        cerr << RED <<  "Error : Can't able to read the data" << RESET << "\n";
         return false;
       }
       inFile >> data;
@@ -108,26 +108,26 @@ class ProcessData {
 
     ofstream outFile(fileName);
     if(!outFile.is_open()){
-        cout << "Can't able to create the temp file";
+        cerr << RED <<  "Error : Can't able to create the temporary file" << RESET << "\n";
         return false;
     }
     outFile << data.dump(4);
     outFile.close();
     inFile.close();
     
-    cout << "Date data has been assembled";
+    cout << GREEN << "Date's related data has been assembled" << RESET << "\n";
     return true;
   }
 
 
   
  
-  InumericalDataInsight GetNumericalDataInsights(bool print=true,string fileName="glacier1std.json"){
+  InumericalDataInsight GetNumericalDataInsights(bool print=true,string fileName="glacier1.json"){
         setFsPointer("/app/Data Extraction/data",false);
         struct InumericalDataInsight m;
           ifstream dataFile(fileName);
           if(!dataFile.is_open()){
-            cout << "Unable to read the data to get numerical Insights" << "\n";
+            cerr << RED <<  "Error : Can't able to read the data file" << RESET << "\n";
             return m;
           }
           json data;
@@ -196,8 +196,8 @@ class ProcessData {
           return nm;
           
   }
-  IDataType& ScaleMinMax(IDataType &dp){
-        struct InumericalDataInsight insights = GetNumericalDataInsights(false);
+  IDataType& ScaleMinMax(IDataType &dp,string fileName="glacier1.json"){
+        struct InumericalDataInsight insights = GetNumericalDataInsights(false,fileName);
         insights.min_sc = min(insights.min_sc,dp.subscriberCount);
         insights.max_sc = max(insights.max_sc,dp.subscriberCount);
 
@@ -220,62 +220,62 @@ class ProcessData {
         dp.averageViewsPerVideo = (double)(dp.averageViewsPerVideo-insights.min_vv)/(insights.max_vv-insights.min_vv);
         dp.publishedAtDetails.day_of_week = (double)(dp.publishedAtDetails.day_of_week)/(6);
         dp.publishedAtDetails.hour = (double)(dp.publishedAtDetails.hour)/(23);
-        cout << "Local Min Max Scaling is done ";
+        cout <<GREEN << "Scalled (Min Max Scaling)" << RESET << "\n";
         return dp;
   }
 
    bool ScaleMinMaxAll(string dataFileName="glacier1.json",string outputFileName="glacier1mm.json"){
-    struct InumericalDataInsight insights = GetNumericalDataInsights(false);
+    struct InumericalDataInsight insights = GetNumericalDataInsights(false,dataFileName);
       setFsPointer("/app/Data Extraction/data",false);
       ifstream inFile(dataFileName);
       if(!inFile.is_open()){
-      cerr << "Can't able to read the data file" << "\n";
+      cerr << RED <<  "Error : Can't read the data from the file" << RESET << "\n";
       return false;
 
     }
     
     ofstream outFile(outputFileName);
     if(!outFile.is_open()){
-      cerr << "Can't able to create the new data file" << "\n";
+      cerr << RED <<  "Error : Can't able to create the output file" << RESET << "\n";
       return false;
       
     }
     json data;
     inFile >> data;
-    
+
     for(auto &x:data["data"]){
-      x["subscriberCount"] = (double)(x["subscriberCount"].get<int>()-insights.min_sc)/(insights.max_sc-insights.min_sc);
-        x["commentCount"] = (double)(x["commentCount"].get<int>()-insights.min_cc)/(insights.max_cc-insights.min_cc);
-        x["likeCount"] = (double)(x["likeCount"].get<int>()-insights.min_lc)/(insights.max_lc-insights.min_lc);
-        x["viewCount"] = (double)(x["viewCount"].get<int>()-insights.min_vc)/(insights.max_vc-insights.min_vc);
+        x["subscriberCount"] = (double)(x["subscriberCount"].get<double>()-insights.min_sc)/(insights.max_sc-insights.min_sc);
+        x["commentCount"] = (double)(x["commentCount"].get<double>()-insights.min_cc)/(insights.max_cc-insights.min_cc);
+        x["likeCount"] = (double)(x["likeCount"].get<double>()-insights.min_lc)/(insights.max_lc-insights.min_lc);
+        x["viewCount"] = (double)(x["viewCount"].get<double>()-insights.min_vc)/(insights.max_vc-insights.min_vc);
         x["averageViewsPerVideo"] = (double)(x["averageViewsPerVideo"].get<double>()-insights.min_vv)/(insights.max_vv-insights.min_vv);
-        x["publishedAtDetails"]["day_of_week"] = (double)(x["publishedAtDetails"]["day_of_week"].get<int>())/(6);
-        x["publishedAtDetails"]["hour"] = (double)(x["publishedAtDetails"]["hour"].get<int>())/(23);
+        x["publishedAtDetails"]["day_of_week"] = (double)(x["publishedAtDetails"]["day_of_week"].get<double>())/(6.0);
+        x["publishedAtDetails"]["hour"] = (double)(x["publishedAtDetails"]["hour"].get<double>())/(23.0);
       }
       outFile << data.dump(4);
       outFile.close();
       inFile.close();
     
-    
+    cout << GREEN << "Min Max scalling has done and saved the data at :"  << BOLD << outputFileName << RESET << "\n";
     return true;
 
   }
   bool StandardizarionScaling(string dataFileName="glacier1.json",string outputFileName="glacier1std.json"){
-    struct InumericalDataInsight insights = GetNumericalDataInsights(false);
+    struct InumericalDataInsight insights = GetNumericalDataInsights(false,dataFileName);
     
     setFsPointer("/app/Data Extraction/data",false);
 
     ifstream inFile(dataFileName);
 
     if(!inFile.is_open()){
-      cout << "Can't able to read the data file" << "\n";
+      cerr << RED <<  "Error : Can't able to read the data file" << RESET << "\n";
       return false;
 
     }
     
     ofstream outFile(outputFileName);
     if(!outFile.is_open()){
-      cout << "Can't able to create the new data file" << "\n";
+      cerr << RED <<  "Error : Can't able to create the output file " << RESET << "\n";
       return false;
 
     }
@@ -293,17 +293,17 @@ class ProcessData {
     outFile << data.dump(4);
     outFile.close();
     inFile.close();
-    cout << "Standardization scalling is done" << "\n";
+    cout << GREEN << "Standardization scalling is done and saved at : " << BOLD << outputFileName << RESET << "\n";
     return true;
   }
-  bool SplitData(string dataFileName="glacier1mm.json",string trsetFileName="glacier1trs.json",string tsetFileName="glacier1ts.json"){
+  bool SplitData(string dataFileName="glacier1mm.json",string trsetFileName="glacier1trs.json",string tsetFileName="glacier1ts.json",double ratio=(double)2/10){
       json data = {{"count",0},{"data",json::array()}};
 
       setFsPointer("/app/Data Extraction/data",false);
 
       ifstream DataFile(dataFileName);
       if(!DataFile.is_open()){
-        cout << "Can't able to read the data file" << "\n";
+        cerr << RED <<  "Error : Can't able to read the data file" << RESET << "\n";
         return false;
       }
     DataFile >> data;
@@ -315,8 +315,8 @@ class ProcessData {
 
     shuffle(ds.begin(),ds.end(),g);
 
-    int limit= count * 2/10;
-  
+    int limit= count * ratio;
+    
     vector<IDataType> testset(ds.begin(), ds.begin() + limit);
     vector<IDataType> trainset(ds.begin() + limit, ds.end());
 
@@ -324,7 +324,7 @@ class ProcessData {
     ofstream TestSetF(tsetFileName);
 
     if(!TrainSetF.is_open()||!TestSetF.is_open()){
-        cout << "Can't able to create the data files" << "\n";
+        cerr << RED <<  "Error : Can't able to create the data files" << RESET << "\n";
         return false;
     }
 
@@ -339,7 +339,7 @@ class ProcessData {
     TestSetF.close();
     DataFile.close();
 
-    cout << "Split has been created successfully" << "\n";
+    cout << GREEN <<  "Split has been created successfully" << RESET << "\n";
 
     return true;
 

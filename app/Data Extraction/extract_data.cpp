@@ -30,12 +30,8 @@ class YTAPI : public API
       return;
     }
   }
-  bool allSet()
-  {
-    return APIKEY.size() ? true : false;
-  }
-  bool saveVideoIds()
-  {
+  
+  bool saveVideoIds(){
 
     json updated_vids_json = {{"ids", json::array()}, {"total", 0}};
     for (const auto &id : vids)
@@ -43,7 +39,7 @@ class YTAPI : public API
     updated_vids_json["total"] = vids.size();
     std::ofstream outFile("vids.json");
     if (!outFile.is_open()){
-      std::cerr << "Cannot open file for writing!\n";
+      std::cerr << RED << "Error : Cannot open file for writing!\n" <<RESET;
       outFile.close();
       return false;
     }
@@ -138,17 +134,17 @@ public:
     setFsPointer("/app/Data Extraction",false);
     const char *apiKeyEnv = std::getenv("YT_API_KEY");
 
-    if (!apiKeyEnv)
-      std::cerr << "Error: YT_API_KEY not set in environment!\n";
-    else
-    {
+    if (!apiKeyEnv) {
+      std::cerr << RED << "Error: YT_API_KEY not set in environment!\n" << RESET;
+      abort();
+    }
+    else {
       APIKEY = string(apiKeyEnv);
       loadIDs();
     }
   }
 
-  IFetchVideoDataResponse FetchVideoData(string url)
-  {
+  IFetchVideoDataResponse FetchVideoData(string url){
     IFetchVideoDataResponse res{false, "", IDataType()};
     string id = decodeIdFromURL(url);
     if (!id.size())
@@ -204,14 +200,9 @@ public:
     return res;
   }
 
-  bool FetchVideoIds(string q, string part_ = "snippet", string order = "viewCount")
-  {
+  bool FetchVideoIds(string q, string part_ = "snippet", string order = "viewCount"){
     setFsPointer("/app/Data Extraction/data",false);
-    if (!allSet())
-    {
-      cerr << "Missing YT init setup" << "\n";
-      return false;
-    }
+    
     string past3 = [&]
     { auto t = chrono::system_clock::to_time_t(chrono::system_clock::now() - chrono::hours(24*3)); ostringstream s; s << put_time(localtime(&t), "%Y-%m-%d"); return s.str(); }();
 
@@ -223,11 +214,7 @@ public:
                       "T00:00:00Z" + "&publishedAfter=" + past5 +
                       "T00:00:00Z" + "&maxResults=50&key=" + APIKEY;
     json j = get(endpoint);
-    if (j["payload"].contains("error"))
-    {
-      cout << j["payload"]["error"]["message"] << "\n";
-      return false;
-    }
+    if (j["payload"].contains("error")) {cout <<RED << "Error : " <<  j["payload"]["error"]["message"] << RESET << "\n"; return false;}
     if (j["status"] && j["payload"].contains("items"))
     {
       for (auto each : j["payload"]["items"])
@@ -245,45 +232,42 @@ public:
       updated_vids_json["total"] = vids.size();
       std::ofstream outFile("vids.json");
       if (!outFile.is_open()){
-        std::cerr << "Cannot open file for writing!\n";
+        std::cerr << RED << "Error : Cannot open file for writing!\n" << RESET;
         outFile.close();
         return false;
       }
       outFile << updated_vids_json.dump(4);
       outFile.close();
-
+      cout << YELLOW << "Videos search has sucessfully completed" << RESET << "\n";
       return true;
     }
-    else
-      cout << "failed to fetch any";
+    else cout << RED <<  "failed to fetch any" << RESET << "\n";
     return false;
   }
 
-  bool FetchBulkVideoDetails()
-  {
+  bool FetchBulkVideoDetails(){
     int i = 0;
-    while (vids.size())
-    {
+    if(!vids.size())  cout << YELLOW << "There is no videos's ids to fetch details" << RESET << "\n";
+    while (vids.size()) {
       cout << "Fetching " << i++ << "th" << " Batch." << "\n";
       if (!FetchVideoDetailsParams())return false;
     }
+    
     return true;
   }
 
   bool FetchVideoDetailsParams(string part_ = "snippet,statistics,contentDetails"){
     setFsPointer("/app/Data Extraction/data",false);
 
-    if (!allSet()){
-      cerr << "Missing YT init setup" << "\n";
-      return false;
-    }
+    
+
 
     unordered_set copy(vids);
 
     int i = 0;
     string vididlist ;
     if (!vids.size()){
-      cout << "There is no vids to fetch details";
+      cout << YELLOW << "There is no videos's ids to fetch details" << RESET << "\n";
       return false;
     }
 
@@ -306,8 +290,7 @@ public:
       return false;
     }
     if (response["payload"].contains("error")){
-      cout << response["payload"]["error"]["message"] << "\n";
-      return false;
+       cout <<RED << "Error : " <<  response["payload"]["error"]["message"] << RESET << "\n"; return false;
     }
     json data;
 
@@ -351,8 +334,7 @@ public:
     int num = (int)data["count"] + (int)response["payload"]["items"].size();
     data["count"] = num;
 
-    if (!saveVideoIds())
-    {
+    if (!saveVideoIds()) {
       cout << "\033[31mfailed to delete the trash video ids\033[0m\n";
       vids = copy;
       return false;
@@ -381,19 +363,17 @@ public:
       auto processBatch = [&](string &ids, map<string,int> &indices, json &data, int &i) {
     ids.pop_back(); // remove last ','
 
-    string url = "https://www.googleapis.com/youtube/v3/videos?part=" 
-               + part_ + "&id=" + ids + "&key=" + APIKEY;
+    string url = "https://www.googleapis.com/youtube/v3/videos?part="  + part_ + "&id=" + ids + "&key=" + APIKEY;
 
     json response = get(url);
 
-    if (!response["status"]) {
-        cout << "Failed to fetch the video's details\n";
+    if (!response["status"] ) {
+        cout <<RED  << "Error : Failed to fetch the video's Targets\n" << RESET;
         throw "Failed to fetch the video's details";
     }
-
-    if (response["payload"].contains("error")) {
-        cout << "Failed to fetch the video's details\n";
-        throw "Failed to fetch the video's details";
+    if(response["payload"].contains("error")){
+      cout <<RED  << "Error : " << response["payload"]["error"]["message"] << RESET;
+      throw response["payload"]["error"]["message"];
     }
 
     for (auto &res : response["payload"]["items"]) {
@@ -401,9 +381,8 @@ public:
         data["data"][indices[res["id"]]]["TargetCollected"] = true;
     }
 
-    cout << "some batch is done!\n";
+    cout << GREEN <<  "Data has been successfully fetched!\n" << RESET;
 
-    // reset batch state
     i = 0;
     ids.clear();
     indices.clear();
@@ -411,9 +390,7 @@ public:
       int j=0;
       for (auto x : data["data"]){
         if (!x["TargetCollected"].get<bool>()){
-          if (i > 50){
-              processBatch(ids, indices, data, i);
-          }
+          if (i > 50) processBatch(ids, indices, data, i);
           else{
             ids.append(x["id"]);
             ids.append(",");
@@ -429,7 +406,7 @@ public:
       outFile << data.dump(4);
       inFile.close();
       outFile.close();
-      cout << message << "\n";
+      cout << RED << "Error : " <<  message << RESET << "\n";
       return false;
     }
             
@@ -441,40 +418,7 @@ public:
   }
 
 
-  void FetchDataCLI(){
-  cout << "Search videos [1] \nFetch all videos data [2] \nFetch all videos data's target [3]" << "\n";
-  int option;
-  cout << "Your choice : ";
-  cin >> option;
-  cin.ignore(numeric_limits<streamsize>::max(), '\n');
-  if (option == 1)
-  {
-    cout << "How many searches : ";
-    int n;
-    cin >> n;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    string temp;
-    for (int i = 1; i <= n; i++)
-    {
-      getline(cin, temp);
-      string result = "";
-      for (char c : temp)
-      {
-        if (c == ' ')
-          result += "%20";
-        else
-          result += c;
-      }
-      cout << i << " Fetching " << result << "\n";
-      if (!FetchVideoIds(result))
-        break;
-    }
-    cout << "Completed" << "\n";
-  }
-  else if(option == 2) FetchBulkVideoDetails();
-  else if(option == 3)  FetchVideoDetailsTarget();
-  else cout << "Invalid Selection" << "\n";
-}
+
 
 };
 

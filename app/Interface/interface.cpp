@@ -1,5 +1,6 @@
 #include "../Data Extraction/extract_data.cpp"
 #include "../ML Model/lr_model.cpp"
+#include "../headers/libs.hpp"
 
 class UserInterface
 {
@@ -9,15 +10,6 @@ class UserInterface
     LinearRegressionModel ml;
 
 public:
-    const string RESET = "\033[0m";
-    const string BOLD = "\033[1m";
-    const string RED = "\033[31m";
-    const string GREEN = "\033[32m";
-    const string YELLOW = "\033[33m";
-    const string BLUE = "\033[34m";
-    const string MAGENTA = "\033[35m";
-    const string CYAN = "\033[36m";
-
     void ClearInput()
     {
         cin.clear();
@@ -69,16 +61,9 @@ public:
                         {
                             if (option == 0)
                                 break;
-                            else if (option == 1) {predict() ;
-                                cout << GREEN << "Predicting...\n"
-                                     << RESET;}
-                            else if (option == 2) { ml.train(0.001, 1000) ;
-                                cout << GREEN << "Training model...\n"
-                                     << RESET;}
-                            else if (option == 3) { ml.evaluateMSE();
-                                cout << GREEN << "Evaluating MSE...\n"
-                                     << RESET;
-                                }
+                            else if (option == 1) predict() ;
+                            else if (option == 2)  ml.train(0.001, 1000) ;
+                            else if (option == 3)  ml.evaluateMSE();
                             else cout << RED << "Invalid Option Selected.\n" << RESET;
                         }
                         else {
@@ -129,8 +114,7 @@ public:
                                              << RESET;
                                         if (!yt.FetchVideoIds(result)) break;
                                     }
-                                    cout << GREEN << "--- Completed ---\n"
-                                         << RESET;
+                                    cout << GREEN << "--- Completed ---\n" << RESET;
                                 }
                                 else
                                 {
@@ -139,14 +123,8 @@ public:
                                     ClearInput();
                                 }
                             }
-                            else if (option == 2){ yt.FetchBulkVideoDetails();
-                                cout << GREEN << "Fetching bulk details...\n"
-                                     << RESET;}
-                            else if (option == 3)  {
-                                yt.FetchVideoDetailsTarget() ;
-                                cout << GREEN << "Fetching target details...\n"
-                                     << RESET;
-                                }
+                            else if (option == 2) yt.FetchBulkVideoDetails();
+                            else if (option == 3)   yt.FetchVideoDetailsTarget() ;
                             else cout << RED << "Invalid Choice.\n" << RESET;
                         }
                         else
@@ -174,21 +152,10 @@ public:
                         cout << RED << "[0]" << RESET << " Back to Main Menu\n";
                         cout << BOLD << "Your Choice: " << RESET;
 
-                        if (cin >> option)
-                        {
-                            if (option == 0)
-                                break;
-                            else if (option == 1) {
-
-                                CleanData();
-                                cout << GREEN << "Cleaning Data...\n"
-                                << RESET;
-                            } 
-                            else if (option == 2) { 
-                                pd.GetNumericalDataInsights(true,"glacier2.json") ;
-                                cout << GREEN << "Getting Insights...\n"
-                                     << RESET;
-                            }
+                        if (cin >> option){
+                            if (option == 0) break;
+                            else if (option == 1) CleanData(); 
+                            else if (option == 2)  pd.GetNumericalDataInsights(true,"glacier2.json") ;
                             else if (option == 3)
                             {
                                 int scaling;
@@ -199,36 +166,21 @@ public:
                                 cout << YELLOW << "[2]" << RESET << " Standardization Scaling\n";
                                 cout << BOLD << "Your Choice: " << RESET;
 
-                                if (cin >> scaling)
-                                {
-                                    if (scaling == 1) {
-                                        pd.ScaleMinMaxAll("glacier2.json","glacier2mm.json") ;
-                                        cout << GREEN << "Applying Min Max Scaling...\n"
-                                             << RESET;}
-                                    else if (scaling == 2) { pd.StandardizarionScaling("glacier2.json","glacier2std.json") ;
-                                        cout << GREEN << "Applying Standardization...\n"
-                                             << RESET;
-                                    }
+                                if (cin >> scaling){
+                                    if (scaling == 1) pd.ScaleMinMaxAll("glacier2.json","glacier2mm.json");
+                                    else if (scaling == 2)  pd.StandardizarionScaling("glacier2.json","glacier2std.json") ;
                                     else cout << RED << "Invalid Scaling Option.\n" << RESET;
                                 }
-                                else
-                                {
-                                    cout << RED << "Invalid input.\n"
-                                         << RESET;
+                                else{
+                                    cout << RED << "Invalid input.\n"<< RESET;
                                     ClearInput();
                                 }
                             }
-                            else if (option == 4) { pd.SplitData("glacier2mm.json","glacier2trs.json","glacier2ts.json");
-                                cout << GREEN << "Splitting Data...\n" << RESET;
-                                    }
-                            else
-                                cout << RED << "Invalid Option Selected.\n"
-                                     << RESET;
+                            else if (option == 4)  pd.SplitData("glacier2.json","glacier2trs.json","glacier2ts.json");
+                            else cout << RED << "Invalid Option Selected.\n" << RESET;
                         }
-                        else
-                        {
-                            cout << RED << "Invalid input. Please enter a number.\n"
-                                 << RESET;
+                        else {
+                            cout << RED << "Invalid input. Please enter a number.\n" << RESET;
                             ClearInput();
                         }
                     }
@@ -266,10 +218,7 @@ public:
         IDataType &d = params.payload;
         return ml.predict(d.commentCount, d.likeCount, d.subscriberCount, d.publishedAtDetails.day_of_week, d.publishedAtDetails.hour,d.averageViewsPerVideo);
     }
-    void SearchVideos()
-    {
-        yt.FetchDataCLI();
-    }
+    
     void CleanData()
     {
         pd.removeDuplicates("glacier2.json");
