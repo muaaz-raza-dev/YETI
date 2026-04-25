@@ -37,8 +37,8 @@ const string CYAN = "\033[36m";
 
 
 struct PublishedAtDetails {
-    int day_of_week;
-    int hour;
+    double day_of_week;
+    double hour;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PublishedAtDetails,  day_of_week, hour)
@@ -55,13 +55,14 @@ struct IDataType {
     double subscriberCount;
     std::string title;
     double viewCount;
-    double averageViewsPerVideo;
+    double averageViewsPerVideo=0.0;
     bool TargetCollected;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(IDataType, 
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+    IDataType, 
     channelId, commentCount, id, likeCount, publishedAt, 
-    publishedAtDetails, subscriberCount, title, viewCount
+    publishedAtDetails, subscriberCount, title, viewCount,averageViewsPerVideo
 )
 
 

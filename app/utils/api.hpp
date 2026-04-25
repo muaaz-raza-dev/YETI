@@ -39,6 +39,7 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* r
        cerr << "Request failed: " << curl_easy_strerror(result) << endl;
       return j;
     }
+    
     j["status"] = true;
     j["payload"] = json::parse(response);
     if(print) PrintResponse();

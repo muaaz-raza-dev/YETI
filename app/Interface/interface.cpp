@@ -7,7 +7,7 @@ class UserInterface
     string url;
     YTAPI yt;
     ProcessData pd;
-    LinearRegressionModel ml;
+    LinearRegressionModel ml{"glacier2trs.json"};
 
 public:
     void ClearInput()
@@ -16,8 +16,7 @@ public:
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 
-    void Interface()
-    {
+    void Interface(){
         int choice;
         while (true)
         {
@@ -57,14 +56,28 @@ public:
                         cout << RED << "[0]" << RESET << " Back to Main Menu\n";
                         cout << BOLD << "Your Choice: " << RESET;
 
-                        if (cin >> option)
-                        {
-                            if (option == 0)
-                                break;
-                            else if (option == 1) predict() ;
-                            else if (option == 2)  ml.train(0.001, 1000) ;
-                            else if (option == 3)  ml.evaluateMSE();
-                            else cout << RED << "Invalid Option Selected.\n" << RESET;
+                        if (cin >> option){
+                            if (option == 0) break;
+                            else if (option == 1)  predict() ;
+                            else if (option == 2)  ml.train() ;
+                            else if (option == 3)  {
+                                while(true){
+
+                                    int metric;
+                                    cout << YELLOW << "[1]" << RESET << " MSE (Mean Square Error) \n";
+                                    cout << YELLOW << "[2]" << RESET << " Compare MSE (Mean Square Error) \n";
+                                cout << RED << "[0]" << RESET << " Back to Main Menu\n";
+                                cout << BOLD << "Your Choice: " << RESET;
+                                if(cin >> metric){
+                                    if(metric == 0) break;
+                                    else if(metric == 1) cout << CYAN <<  "MSE : "  << BOLD <<  ml.evaluateMSE() << RESET << "\n";
+                                    else if(metric == 2) ml.CompareTestTrainResults();
+                                    else cout << RED << "Invalid Option Selected.\n" << RESET;
+                                }
+                                else {cout << RED << "Invalid Option Selected.\n" << RESET; ClearInput();} 
+                            }
+                        }
+                            else {cout << RED << "Invalid Option Selected.\n" << RESET;ClearInput();}
                         }
                         else {
                             cout << RED << "Invalid input. Please enter a number.\n" << RESET;
@@ -110,11 +123,10 @@ public:
                                             else
                                                 result += c;
                                         }
-                                        cout << GREEN << "[" << i << "] Fetching " << result << "...\n"
-                                             << RESET;
+                                        cout << "\r" <<  GREEN << "[" << i << "] Fetching " << result << "...\n" << RESET;
                                         if (!yt.FetchVideoIds(result)) break;
                                     }
-                                    cout << GREEN << "--- Completed ---\n" << RESET;
+                                    cout << "\r" << GREEN << "--- Completed ---\n" << RESET;
                                 }
                                 else
                                 {
@@ -176,7 +188,7 @@ public:
                                     ClearInput();
                                 }
                             }
-                            else if (option == 4)  pd.SplitData("glacier2.json","glacier2trs.json","glacier2ts.json");
+                            else if (option == 4){  pd.SplitData("glacier2mm.json","glacier2trs.json","glacier2ts.json"); ml.loadData("glacier2trs.json");}
                             else cout << RED << "Invalid Option Selected.\n" << RESET;
                         }
                         else {
@@ -202,21 +214,19 @@ public:
         }
     }
 
-    long long predict()
-    {
+    void predict(){
         string url;
         cout << "Enter the URL of the yotube video : ";
         cin >> url;
         IFetchVideoDataResponse params = yt.FetchVideoData(url);
-        if (!params.status)
-        {
-            cout << params.message << "\n";
-            return -99.99;
+        if (!params.status){
+            cout << RED << "ERROR : " <<  params.message << RESET << "\n";
+            return ;
         }
-
-        pd.ScaleMinMax(params.payload);
         IDataType &d = params.payload;
-        return ml.predict(d.commentCount, d.likeCount, d.subscriberCount, d.publishedAtDetails.day_of_week, d.publishedAtDetails.hour,d.averageViewsPerVideo);
+        pd.ScaleMinMax(params.payload,"glacier2.json");
+        cout << GREEN << "Predicted views (7th day) : " << BOLD<<   ml.predict(d.commentCount, d.likeCount, d.subscriberCount, d.publishedAtDetails.day_of_week, 
+            d.publishedAtDetails.hour,d.averageViewsPerVideo) << RESET<<"\n";
     }
     
     void CleanData()

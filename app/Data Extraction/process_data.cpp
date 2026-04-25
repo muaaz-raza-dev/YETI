@@ -144,8 +144,8 @@ class ProcessData {
             if(min_lc > x["likeCount"].get<int>()) min_lc = x["likeCount"];
             slc+= x["likeCount"].get<int>();
 
-            if(max_lc < x["averageViewsPerVideo"].get<double>())  max_lc = x["averageViewsPerVideo"];
-            if(min_lc > x["averageViewsPerVideo"].get<double>()) min_lc = x["averageViewsPerVideo"];
+            if(max_vv < x["averageViewsPerVideo"].get<double>())  max_vv = x["averageViewsPerVideo"];
+            if(min_vv > x["averageViewsPerVideo"].get<double>()) min_vv = x["averageViewsPerVideo"];
             svv+= x["averageViewsPerVideo"].get<double>();
 
             if(max_sc < x["subscriberCount"].get<int>())  max_sc = x["subscriberCount"];
@@ -197,6 +197,7 @@ class ProcessData {
           
   }
   IDataType& ScaleMinMax(IDataType &dp,string fileName="glacier1.json"){
+
         struct InumericalDataInsight insights = GetNumericalDataInsights(false,fileName);
         insights.min_sc = min(insights.min_sc,dp.subscriberCount);
         insights.max_sc = max(insights.max_sc,dp.subscriberCount);
@@ -218,8 +219,9 @@ class ProcessData {
         dp.likeCount = (double)(dp.likeCount-insights.min_lc)/(insights.max_lc-insights.min_lc);
         dp.viewCount = (double)(dp.viewCount-insights.min_vc)/(insights.max_vc-insights.min_vc);
         dp.averageViewsPerVideo = (double)(dp.averageViewsPerVideo-insights.min_vv)/(insights.max_vv-insights.min_vv);
-        dp.publishedAtDetails.day_of_week = (double)(dp.publishedAtDetails.day_of_week)/(6);
-        dp.publishedAtDetails.hour = (double)(dp.publishedAtDetails.hour)/(23);
+        dp.publishedAtDetails.day_of_week = (double)(dp.publishedAtDetails.day_of_week)/(6.0);
+        dp.publishedAtDetails.hour = (double)(dp.publishedAtDetails.hour)/(23.0);
+
         cout <<GREEN << "Scalled (Min Max Scaling)" << RESET << "\n";
         return dp;
   }
@@ -310,6 +312,7 @@ class ProcessData {
     int count = data["count"].get<int>();
 
     vector<IDataType> ds = data["data"].get<vector<IDataType>>();
+    
     std::random_device rd;
     std::mt19937 g(rd());
 
