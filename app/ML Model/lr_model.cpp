@@ -5,23 +5,38 @@
 
 
 class LinearRegressionModel{
-    double weights[10]={0,0,0,0,0,0,0,0,0,0}; 
+    vector<double> weights = vector<double>(10, 0.0);
+
     ProcessData pd;
     vector<IDataType> ds;
+
     public : 
 
     LinearRegressionModel(string fileName="glacier1trs.json"){
-        setFsPointer("/app/ML Model/",false);
 
+        setFsPointer("/app/ML Model/",false);
         ifstream ModelFile("lr.json");
         if(ModelFile.is_open()){
             json j;
             ModelFile >> j;
+            bool bad = false;
+
+    if (!j.contains("weights") || j["weights"].is_null() || !j["weights"].is_array() || j["weights"][0].is_null()) {
+        bad = true;
+    }
+
+    if (bad) {
+        cerr << RED << "ERROR : Corrupt model detected. Deleting file...\n" << RESET;
+        fs::remove("lr.json");
+        return;
+    }
+
             j["weights"].get_to(weights);
             ModelFile.close();
         }
         loadData(fileName);
     }
+
     void loadData(string fileName="glacier1trs.json"){
         setFsPointer("/app/Data Extraction/data/",false);
         ifstream DataFile(fileName);
@@ -39,7 +54,7 @@ class LinearRegressionModel{
     }
     
     double evaluateMSE(){    
-        double ans = 0;
+        double ans = 0.0;
 
         for(auto &x:ds){
             double y0 = fx(x);
@@ -50,12 +65,23 @@ class LinearRegressionModel{
         return ans / ds.size();
     }
     
+    double evaluateMAE(){    
+        double ans = 0.0;
+
+        for(auto &x:ds){
+            double y0 = fx(x);
+            double y = x.expectedViewCount;
+            ans += abs(y-y0);
+        }
+        return ans / ds.size();
+    }
+    
     double fx(IDataType &d){
         return weights[0]*d.commentCount+weights[1] *d.likeCount+weights[2]*d.subscriberCount+weights[3]*d.publishedAtDetails.day_of_week_sin+weights[4]*
         d.publishedAtDetails.day_of_week_cos+weights[5]*d.publishedAtDetails.hour_sin + weights[6]*d.publishedAtDetails.hour_cos + weights[7]*d.averageViewsPerVideo + weights[8]*d.currentViewCount + weights[9];
     }
 
-    void train(float eta=0.01,int ephocs=500000){
+    void train(float eta=0.0000001,int ephocs=1000000){
         
         int n = ds.size();
         double last_mse = evaluateMSE();
@@ -64,7 +90,7 @@ class LinearRegressionModel{
         cout << YELLOW ;
         for (int i = 0; i < ephocs; i++){
 
-            double g[10] = {0,0,0,0,0,0,0,0,0,0}; 
+            vector<double> g = vector<double>(10, 0.0);
                      
             if(i%1000 ==0  ) cout << "\r" << i << " / " << ephocs-1 << flush;
 
@@ -99,10 +125,12 @@ class LinearRegressionModel{
         model_att["weights"] = weights;
         setFsPointer("/app/ML Model/",false);
         ofstream ModelFile("lr.json");
+
         if(!ModelFile.is_open()){
             cout << RED<< "ERROR : could not able to save the trained parameters" << RESET << "\n";
             return;
         }
+
         ModelFile << model_att.dump(4);
         ModelFile.close();
         cout << MAGENTA << "After MSE(MEAN SQUARE ERROR) : "<< evaluateMSE() <<  RESET << "\n";
@@ -115,7 +143,7 @@ class LinearRegressionModel{
     }
 
     
-    void CompareTestTrainResults(string TrainfileName="glacier2trs.json",string TestfileName="glacier2ts.json"){
+    void CompareTestTrainResultsMSE(string TrainfileName="glacier2trs.json",string TestfileName="glacier2ts.json"){
         double tr = evaluateMSE();
         loadData(TestfileName);
         double ts = evaluateMSE();
@@ -124,6 +152,19 @@ class LinearRegressionModel{
 
         cout << CYAN << "Training set MSE(MEAN SQUARE ERROR) : "<<  BOLD << tr << RESET << "\n";
         cout << CYAN << "Test set MSE(MEAN SQUARE ERROR) : "<<  BOLD << ts <<  RESET << "\n";
+
+        if(tr < ts) cout << RED  << "Over Fitting Detected " << RESET << "\n";
+    }
+
+    void CompareTestTrainResultsMAE(string TrainfileName="glacier2trs.json",string TestfileName="glacier2ts.json"){
+        double tr = evaluateMAE();
+        loadData(TestfileName);
+        double ts = evaluateMAE();
+
+        loadData(TrainfileName);
+
+        cout << CYAN << "Training set MAE(MEAN ABSOLUTE ERROR) : "<<  BOLD << tr << RESET << "\n";
+        cout << CYAN << "Test set MAE(MEAN ABSOLUTE ERROR) : "<<  BOLD << ts <<  RESET << "\n";
 
         if(tr < ts) cout << RED  << "Over Fitting Detected " << RESET << "\n";
     }

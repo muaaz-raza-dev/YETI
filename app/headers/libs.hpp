@@ -43,7 +43,7 @@ struct PublishedAtDetails {
     double hour_sin , hour_cos;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PublishedAtDetails,  day_of_week, hour)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PublishedAtDetails,  day_of_week_sin, day_of_week_cos, hour_sin,hour_cos)
 
 struct IDataType {
     std::string channelId;
@@ -57,19 +57,28 @@ struct IDataType {
     double subscriberCount;
     std::string title;
 
-    // new fields
     double currentViewCount;
     double expectedViewCount;
 
     double averageViewsPerVideo=0.0;
     bool TargetCollected;
 };
-
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
-    IDataType, 
-    channelId, commentCount, id, likeCount, publishedAt, 
-    publishedAtDetails, subscriberCount, title, viewCount,averageViewsPerVideo
-)
+    IDataType,
+    channelId,
+    commentCount,
+    id,
+    likeCount,
+    publishedAt,
+    publishedAtDetails,
+    subscriberCount,
+    title,
+    currentViewCount,
+    expectedViewCount,
+    averageViewsPerVideo,
+    TargetCollected
+);
+
 
 
 struct InumericalDataInsight{

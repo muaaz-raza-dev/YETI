@@ -7,7 +7,7 @@ class UserInterface
     string url;
     YTAPI yt;
     ProcessData pd;
-    LinearRegressionModel ml{"glacier2trs.json"};
+    LinearRegressionModel ml{"glacier2-s1.json"};
 
 public:
     void ClearInput()
@@ -64,14 +64,19 @@ public:
                                 while(true){
 
                                     int metric;
+                                    cout << BOLD << MAGENTA << "------- Model Assestment Metirics -------\n" << RESET;
                                     cout << YELLOW << "[1]" << RESET << " MSE (Mean Square Error) \n";
-                                    cout << YELLOW << "[2]" << RESET << " Compare MSE (Mean Square Error) \n";
+                                    cout << YELLOW << "[2]" << RESET << " MAE (Mean absolute Error) \n";
+                                    cout << YELLOW << "[3]" << RESET << " Compare MSE (Mean Square Error) \n";
+                                    cout << YELLOW << "[4]" << RESET << " Compare MAE (Mean Square Error) \n";
                                 cout << RED << "[0]" << RESET << " Back to Main Menu\n";
                                 cout << BOLD << "Your Choice: " << RESET;
                                 if(cin >> metric){
                                     if(metric == 0) break;
                                     else if(metric == 1) cout << CYAN <<  "MSE : "  << BOLD <<  ml.evaluateMSE() << RESET << "\n";
-                                    else if(metric == 2) ml.CompareTestTrainResults();
+                                    else if(metric == 2) cout << CYAN <<  "MAE : "  << BOLD <<  ml.evaluateMAE() << RESET << "\n";
+                                    else if(metric == 3) ml.CompareTestTrainResultsMSE();
+                                    else if(metric == 4) ml.CompareTestTrainResultsMAE();
                                     else cout << RED << "Invalid Option Selected.\n" << RESET;
                                 }
                                 else {cout << RED << "Invalid Option Selected.\n" << RESET; ClearInput();} 
@@ -168,27 +173,8 @@ public:
                             if (option == 0) break;
                             else if (option == 1) CleanData(); 
                             // else if (option == 2)  pd.GetNumericalDataInsights(true,"glacier2.json") ;
-                            else if (option == 3)
-                            {
-                                int scaling;
-                                cout << "\n"
-                                     << BOLD << "--- Scaling Options ---\n"
-                                     << RESET;
-                                cout << YELLOW << "[1]" << RESET << " Log Scalling and Cyclic Encoding \n";
-                                // cout << YELLOW << "[2]" << RESET << " Standardization Scaling\n";
-                                cout << BOLD << "Your Choice: " << RESET;
-
-                                if (cin >> scaling){
-                                    if (scaling == 1) StandardScalling();
-                                    // else if (scaling == 2)  pd.StandardizarionScaling("glacier2.json","glacier2std.json") ;
-                                    else cout << RED << "Invalid Scaling Option.\n" << RESET;
-                                }
-                                else{
-                                    cout << RED << "Invalid input.\n"<< RESET;
-                                    ClearInput();
-                                }
-                            }
-                            else if (option == 4){  pd.SplitData("glacier2mm.json","glacier2trs.json","glacier2ts.json"); ml.loadData("glacier2trs.json");}
+                            else if (option == 3)  StandardScalling();
+                            else if (option == 4){  pd.SplitData("glacier2-s1.json","glacier2trs.json","glacier2ts.json"); ml.loadData("glacier2trs.json");}
                             else cout << RED << "Invalid Option Selected.\n" << RESET;
                         }
                         else {
@@ -215,6 +201,7 @@ public:
     }
 
     void predict(){
+
         string url;
         cout << "Enter the URL of the yotube video : ";
         cin >> url;
@@ -227,13 +214,14 @@ public:
         StandardScalling(d);
         cout << GREEN << "Predicted views (7th day) : " << BOLD<<   ml.predict(d) << RESET<<"\n";
     }
+
     void StandardScalling(IDataType &d){
         pd.LogScalling(d);
         pd.CyclicEncoding(d);
     }
     void StandardScalling(){
         pd.LogScalling("glacier2.json","glacier2-s1.json");
-        pd.CyclicEncoding("glacier2.json","glacier2-s1.json");
+        pd.CyclicEncoding("glacier2-s1.json","glacier2-s1.json");
     }
     void CleanData()
     {

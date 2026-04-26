@@ -105,7 +105,9 @@ class ProcessData {
 
         x["publishedAtDetails"] = {};
         x["publishedAtDetails"]["hour_sin"] = t.tm_hour;
+        x["publishedAtDetails"]["hour_cos"] = 0.0;
         x["publishedAtDetails"]["day_of_week_sin"] = t.tm_wday;
+        x["publishedAtDetails"]["day_of_week_cos"] = 0.0;
       }
 
     ofstream outFile(fileName);
@@ -133,12 +135,12 @@ class ProcessData {
       inFile >> data;
 
       for(auto &x:data["data"]){
-        x["subscriberCount"] = (double)log(1+x["subscriberCount"]);
-        x["currentViewCount"] = (double)log(1+x["currentViewCount"]);
-        x["expectedViewCount"] = (double)log(1+x["expectedViewCount"]);
-        x["commentCount"] = (double)log(1+x["commentCount"]);
-        x["likeCount"] = (double)log(1+x["likeCount"]);
-        x["averageViewsPerVideo"] = (double)log(1+x["averageViewsPerVideo"]);
+        x["subscriberCount"] = (double)log(1+x["subscriberCount"].get<double>());
+        x["currentViewCount"] = (double)log(1+x["currentViewCount"].get<double>());
+        x["expectedViewCount"] = (double)log(1+x["expectedViewCount"].get<double>());
+        x["commentCount"] = (double)log(1+x["commentCount"].get<double>());
+        x["likeCount"] = (double)log(1+x["likeCount"].get<double>());
+        x["averageViewsPerVideo"] = (double)log(1+abs(x["averageViewsPerVideo"].get<double>()));
       }
     
     ofstream outFile(outFileName);
@@ -149,6 +151,7 @@ class ProcessData {
     cout << GREEN << "Log scalling has been completed on specific data fields." << RESET << "\n";
     return true;
   }
+
   bool LogScalling(IDataType &d){
         d.subscriberCount = (double)log(1+d.subscriberCount);
         d.currentViewCount = (double)log(1+d.currentViewCount);
@@ -159,13 +162,12 @@ class ProcessData {
         return true;
   }
 
-  bool CyclicEncoding(IDataType &d){
+  bool CyclicEncoding(IDataType &x){
+        x.publishedAtDetails.hour_cos = (double)cos((2*(M_PI)*x.publishedAtDetails.hour_sin) / 24.0);
+        x.publishedAtDetails.hour_sin = (double)sin((2*(M_PI)*x.publishedAtDetails.hour_sin) / 24.0);
 
-        d.publishedAtDetails.hour_cos = (double)cos((2*(M_PI)*d.publishedAtDetails.hour_sin) / 24.0);
-        d.publishedAtDetails.hour_sin = (double)sin((2*(M_PI)*d.publishedAtDetails.hour_sin) / 24.0);
-
-        d.publishedAtDetails.day_of_week_cos = (double)cos((2*(M_PI)*d.publishedAtDetails.day_of_week_sin) / 7.0);
-        d.publishedAtDetails.day_of_week_sin = (double)cos((2*(M_PI)*d.publishedAtDetails.day_of_week_sin) / 7.0);
+        x.publishedAtDetails.day_of_week_cos = (double)cos((2*(M_PI)*x.publishedAtDetails.day_of_week_sin) / 7.0);
+        x.publishedAtDetails.day_of_week_sin = (double)cos((2*(M_PI)*x.publishedAtDetails.day_of_week_sin) / 7.0);
 
       return true;
   }
@@ -182,12 +184,13 @@ class ProcessData {
       inFile >> data;
 
       for(auto &x:data["data"]){
+        double h = x["publishedAtDetails"]["hour_sin"].get<double>() , d = x["publishedAtDetails"]["day_of_week_sin"].get<double>();
+        
+        x["publishedAtDetails"]["hour_cos"] = (double)cos((2*(M_PI)*h) / 24.0);
+        x["publishedAtDetails"]["hour_sin"] = (double)sin((2*(M_PI)*h) / 24.0);
 
-        x["publishedAtDetails"]["hour_cos"] = (double)cos((2*(M_PI)*x["publishedAtDetails"]["hour_sin"]) / 24.0);
-        x["publishedAtDetails"]["hour_sin"] = (double)sin((2*(M_PI)*x["publishedAtDetails"]["hour_sin"]) / 24.0);
-
-        x["publishedAtDetails"]["day_of_week_cos"] = (double)cos((2*(M_PI)*x["publishedAtDetails"]["day_of_week_sin"]) / 7.0);
-        x["publishedAtDetails"]["day_of_week_sin"] = (double)cos((2*(M_PI)*x["publishedAtDetails"]["day_of_week_sin"]) / 7.0);
+        x["publishedAtDetails"]["day_of_week_cos"] = (double)cos((2*(M_PI)*d) / 7.0);
+        x["publishedAtDetails"]["day_of_week_sin"] = (double)cos((2*(M_PI)*d) / 7.0);
       }
     
     ofstream outFile(outFileName);
