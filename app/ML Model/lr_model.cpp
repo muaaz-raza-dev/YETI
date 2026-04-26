@@ -5,7 +5,7 @@
 
 
 class LinearRegressionModel{
-    double weights[7]={0,0,0,0,0,0,0}; 
+    double weights[10]={0,0,0,0,0,0,0,0,0,0}; 
     ProcessData pd;
     vector<IDataType> ds;
     public : 
@@ -41,17 +41,18 @@ class LinearRegressionModel{
     double evaluateMSE(){    
         double ans = 0;
 
-        for(auto x:ds){
-            double y0 = fx(x.commentCount,x.likeCount,x.subscriberCount,x.publishedAtDetails.day_of_week,x.publishedAtDetails.hour,x.averageViewsPerVideo);
-            double y = x.viewCount;
+        for(auto &x:ds){
+            double y0 = fx(x);
+            double y = x.expectedViewCount;
             double temp = y-y0;
             ans += temp * temp;
         }
         return ans / ds.size();
     }
     
-    double fx(double x1,double x2,double x3,double x4,double x5,double x6){
-        return weights[0]*x1+weights[1] *x2+weights[2]*x3+weights[3]*x4+weights[4]*x5+weights[5]*x6 + weights[6];
+    double fx(IDataType &d){
+        return weights[0]*d.commentCount+weights[1] *d.likeCount+weights[2]*d.subscriberCount+weights[3]*d.publishedAtDetails.day_of_week_sin+weights[4]*
+        d.publishedAtDetails.day_of_week_cos+weights[5]*d.publishedAtDetails.hour_sin + weights[6]*d.publishedAtDetails.hour_cos + weights[7]*d.averageViewsPerVideo + weights[8]*d.currentViewCount + weights[9];
     }
 
     void train(float eta=0.01,int ephocs=500000){
@@ -63,14 +64,14 @@ class LinearRegressionModel{
         cout << YELLOW ;
         for (int i = 0; i < ephocs; i++){
 
-            double g[7] = {0,0,0,0,0,0,0}; 
+            double g[10] = {0,0,0,0,0,0,0,0,0,0}; 
                      
             if(i%1000 ==0  ) cout << "\r" << i << " / " << ephocs-1 << flush;
 
             for(auto &x:ds){
-                double y0 = fx(x.commentCount,x.likeCount,x.subscriberCount,x.publishedAtDetails.day_of_week,x.publishedAtDetails.hour,x.averageViewsPerVideo);
+                double y0 = fx(x);
 
-                double y = x.viewCount;
+                double y = x.expectedViewCount;
 
                 double constant_term = (y-y0);
 
@@ -78,16 +79,18 @@ class LinearRegressionModel{
                 g[0] += (-constant_term * (x.commentCount)) ;
                 g[1] += (-constant_term * (x.likeCount)) ;
                 g[2] += (-constant_term * (x.subscriberCount)) ;
-                g[3] += (-constant_term * (x.publishedAtDetails.day_of_week)) ;
-                g[4] += (-constant_term * (x.publishedAtDetails.hour)) ;
-                g[5] += (-constant_term * (x.averageViewsPerVideo)) ;
-                g[6] += -constant_term;
+                g[3] += (-constant_term * (x.publishedAtDetails.day_of_week_sin)) ;
+                g[4] += (-constant_term * (x.publishedAtDetails.day_of_week_cos)) ;
+                g[5] += (-constant_term * (x.publishedAtDetails.hour_sin)) ;
+                g[6] += (-constant_term * (x.publishedAtDetails.hour_cos)) ;
+                g[7] += (-constant_term * (x.averageViewsPerVideo)) ;
+                g[8] += (-constant_term * (x.currentViewCount)) ;
+                g[9] += -constant_term;
             }        
 
-        for(int j=0;j<6;j++){
+        for(int j=0;j<=9;j++){
             weights[j] -= (eta * (2.0 / n) * g[j] );
         }
-        weights[6] -= (eta * (2.0 / n) * g[6]);
 
         }
         cout << "\n" << CYAN  << "Model Traning has completed" << RESET << "\n";
@@ -107,12 +110,11 @@ class LinearRegressionModel{
     }
 
 
-    long long predict(double commentCount, double likeCount, double subscriberCount, double day_of_week, double hour,double averageViewsPerVideo) {
-        InumericalDataInsight d = pd.GetNumericalDataInsights(false,"glacier2.json");
-        
-        return (fx(commentCount, likeCount, subscriberCount, day_of_week, hour,averageViewsPerVideo) * (d.max_vc - d.min_vc)) + d.min_vc;
-
+    long long predict(IDataType &x) {
+        return exp(fx(x)) -1 ;
     }
+
+    
     void CompareTestTrainResults(string TrainfileName="glacier2trs.json",string TestfileName="glacier2ts.json"){
         double tr = evaluateMSE();
         loadData(TestfileName);

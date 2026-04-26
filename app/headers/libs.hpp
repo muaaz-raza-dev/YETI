@@ -34,11 +34,13 @@ const string BLUE = "\033[34m";
 const string MAGENTA = "\033[35m";
 const string CYAN = "\033[36m";
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 
 struct PublishedAtDetails {
-    double day_of_week;
-    double hour;
+    double day_of_week_sin , day_of_week_cos ;
+    double hour_sin , hour_cos;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PublishedAtDetails,  day_of_week, hour)
@@ -54,7 +56,11 @@ struct IDataType {
     
     double subscriberCount;
     std::string title;
-    double viewCount;
+
+    // new fields
+    double currentViewCount;
+    double expectedViewCount;
+
     double averageViewsPerVideo=0.0;
     bool TargetCollected;
 };

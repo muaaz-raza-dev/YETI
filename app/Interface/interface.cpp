@@ -158,7 +158,7 @@ public:
                              << BOLD << GREEN << "------------ Process Data ------------\n"
                              << RESET;
                         cout << YELLOW << "[1]" << RESET << " Clean the Data (Type fix, Duplicates, Dates)\n";
-                        cout << YELLOW << "[2]" << RESET << " Get Insights\n";
+                        // cout << YELLOW << "[2]" << RESET << " Get Insights\n";
                         cout << YELLOW << "[3]" << RESET << " Scale Data\n";
                         cout << YELLOW << "[4]" << RESET << " Split Data\n";
                         cout << RED << "[0]" << RESET << " Back to Main Menu\n";
@@ -167,20 +167,20 @@ public:
                         if (cin >> option){
                             if (option == 0) break;
                             else if (option == 1) CleanData(); 
-                            else if (option == 2)  pd.GetNumericalDataInsights(true,"glacier2.json") ;
+                            // else if (option == 2)  pd.GetNumericalDataInsights(true,"glacier2.json") ;
                             else if (option == 3)
                             {
                                 int scaling;
                                 cout << "\n"
                                      << BOLD << "--- Scaling Options ---\n"
                                      << RESET;
-                                cout << YELLOW << "[1]" << RESET << " Min Max Scaling\n";
-                                cout << YELLOW << "[2]" << RESET << " Standardization Scaling\n";
+                                cout << YELLOW << "[1]" << RESET << " Log Scalling and Cyclic Encoding \n";
+                                // cout << YELLOW << "[2]" << RESET << " Standardization Scaling\n";
                                 cout << BOLD << "Your Choice: " << RESET;
 
                                 if (cin >> scaling){
-                                    if (scaling == 1) pd.ScaleMinMaxAll("glacier2.json","glacier2mm.json");
-                                    else if (scaling == 2)  pd.StandardizarionScaling("glacier2.json","glacier2std.json") ;
+                                    if (scaling == 1) StandardScalling();
+                                    // else if (scaling == 2)  pd.StandardizarionScaling("glacier2.json","glacier2std.json") ;
                                     else cout << RED << "Invalid Scaling Option.\n" << RESET;
                                 }
                                 else{
@@ -224,11 +224,17 @@ public:
             return ;
         }
         IDataType &d = params.payload;
-        pd.ScaleMinMax(params.payload,"glacier2.json");
-        cout << GREEN << "Predicted views (7th day) : " << BOLD<<   ml.predict(d.commentCount, d.likeCount, d.subscriberCount, d.publishedAtDetails.day_of_week, 
-            d.publishedAtDetails.hour,d.averageViewsPerVideo) << RESET<<"\n";
+        StandardScalling(d);
+        cout << GREEN << "Predicted views (7th day) : " << BOLD<<   ml.predict(d) << RESET<<"\n";
     }
-    
+    void StandardScalling(IDataType &d){
+        pd.LogScalling(d);
+        pd.CyclicEncoding(d);
+    }
+    void StandardScalling(){
+        pd.LogScalling("glacier2.json","glacier2-s1.json");
+        pd.CyclicEncoding("glacier2.json","glacier2-s1.json");
+    }
     void CleanData()
     {
         pd.removeDuplicates("glacier2.json");

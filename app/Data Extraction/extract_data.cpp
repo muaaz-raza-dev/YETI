@@ -180,7 +180,8 @@ public:
 
     res.payload.subscriberCount = safeToDouble(response["payload"]["items"][0]["subscriberCount"]);
     res.payload.commentCount = safeToDouble(response["payload"]["items"][0]["statistics"]["commentCount"]);
-    res.payload.viewCount = safeToDouble(response["payload"]["items"][0]["statistics"]["viewCount"]);
+    res.payload.currentViewCount = safeToDouble(response["payload"]["items"][0]["statistics"]["viewCount"]);
+    res.payload.expectedViewCount = 0.0;
     res.payload.averageViewsPerVideo = safeToDouble(response["payload"]["items"][0]["averageViewsPerVideo"]);
     res.payload.likeCount = safeToDouble(response["payload"]["items"][0]["statistics"]["likeCount"]);
 
@@ -189,8 +190,8 @@ public:
     
 
     res.payload.publishedAtDetails = {};
-    res.payload.publishedAtDetails.hour = t.tm_hour;
-    res.payload.publishedAtDetails.day_of_week = t.tm_wday;
+    res.payload.publishedAtDetails.hour_sin = t.tm_hour;
+    res.payload.publishedAtDetails.day_of_week_sin = t.tm_wday;
     res.status = true;
 
     cout  << GREEN << "Video data has fetched successully" << RESET << "\n";
@@ -318,7 +319,8 @@ public:
           {"publishedAt", safeToString(x["snippet"]["publishedAt"])},
           {"channelId", safeToString(x["snippet"]["channelId"])},
           {"title", safeToString(x["snippet"]["title"])},
-          {"viewCount", safeToString(x["statistics"]["viewCount"])},
+          {"currentViewCount", safeToString(x["statistics"]["viewCount"])},
+          {"expectedViewCount", 0.0},
           {"likeCount", safeToString(x["statistics"]["likeCount"])},
           {"subscriberCount", x["subscriberCount"]},
           {"averageViewsPerVideo", x["averageViewsPerVideo"]},
@@ -385,7 +387,7 @@ public:
     }
 
     for (auto &res : response["payload"]["items"]) {
-        data["data"][indices[res["id"].get<string>()]]["viewCount"] = res["statistics"]["viewCount"];
+        data["data"][indices[res["id"].get<string>()]]["expectedViewCount"] = res["statistics"]["viewCount"];
         data["data"][indices[res["id"].get<string>()]]["TargetCollected"] = json::boolean_t(true);
     }
 
