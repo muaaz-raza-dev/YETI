@@ -294,7 +294,7 @@ public:
 
     if (!fetchChannelDetails(response)) return false;
 
-    ifstream inFile("glacier2.json");
+    ifstream inFile("glacier3.json");
 
     if (inFile.is_open())
     {
@@ -338,7 +338,7 @@ public:
       vids = copy;
       return false;
     };
-    std::ofstream outFile("glacier2.json");
+    std::ofstream outFile("glacier3.json");
     outFile << data.dump(4);
     outFile.close();
 
@@ -349,15 +349,10 @@ public:
   bool FetchVideoDetailsTarget(string part_ = "statistics"){
     json data;
     setFsPointer("/app/Data Extraction/data",false);
-    ifstream inFile("glacier2.json");
-    ofstream outFile("glacier2_temp.json");
+    ifstream inFile("glacier3.json");
+    
     if(!inFile.is_open()){
         cout <<RED  << "Error : Unable to read the data \n" << RESET;
-        return false;
-    }
-
-    if(!outFile.is_open()){
-        cout <<RED  << "Error : Unable to create the temporary data file \n" << RESET;
         return false;
     }
 
@@ -390,6 +385,7 @@ public:
         data["data"][indices[res["id"].get<string>()]]["expectedViewCount"] = res["statistics"]["viewCount"];
         data["data"][indices[res["id"].get<string>()]]["TargetCollected"] = json::boolean_t(true);
     }
+    
 
     cout << GREEN <<  "Data has been successfully fetched!" << RESET  << "\n";
 
@@ -411,6 +407,13 @@ public:
       }
     }
     catch (const char *message){
+      ofstream outFile("glacier3.json");
+
+      if(!outFile.is_open()){
+        cout <<RED  << "Error : Unable to create the temporary data file \n" << RESET;
+        return false;
+      }
+
       outFile << data.dump(4);
       inFile.close();
       outFile.close();
@@ -421,8 +424,12 @@ public:
     cout << RED <<  "JSON Error: " << e.what() << RESET << "\n";
     return false;
     }
-            
-
+    
+    ofstream outFile("glacier3.json");
+    if(!outFile.is_open()){
+        cout <<RED  << "Error : Unable to create the temporary data file \n" << RESET;
+        return false;
+    }
     outFile << data.dump(4);
     inFile.close();
     outFile.close();

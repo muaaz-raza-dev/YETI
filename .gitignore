@@ -12,14 +12,6 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 
-# Compiled object files
-*.o
-*.obj
-*.so
-*.exe
-*.out
-*.a
-*.lib
 
 # Visual Studio
 *.sdf

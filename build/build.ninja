@@ -52,7 +52,7 @@ build cmake_object_order_depends_target_app: phony || CMakeFiles/app.dir
 build CMakeFiles/app.dir/main.cpp.o: CXX_COMPILER__app_unscanned_Debug /home/muaaz-raza/Projects/YETI/main.cpp || cmake_object_order_depends_target_app
   DEFINES = -DPROJECT_ROOT=\"/home/muaaz-raza/Projects/YETI\"
   DEP_FILE = CMakeFiles/app.dir/main.cpp.o.d
-  FLAGS = -g -std=gnu++17
+  FLAGS = -g -std=gnu++20
   OBJECT_DIR = CMakeFiles/app.dir
   OBJECT_FILE_DIR = CMakeFiles/app.dir
 
